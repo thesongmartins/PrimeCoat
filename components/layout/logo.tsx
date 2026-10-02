@@ -16,7 +16,7 @@ export function Logo({ className, inverse = false }: { className?: string; inver
           <path d="M9 8h5a1 1 0 0 1 0 2H9V8Z" fill="#C65D3B" />
         </svg>
       </span>
-      <span className={cn("font-display text-[1.375rem] font-semibold tracking-tight", inverse ? "text-warm-white" : "text-charcoal")}>
+      <span className={cn("hidden font-display text-xl font-semibold tracking-tight min-[360px]:inline sm:text-[1.375rem]", inverse ? "text-warm-white" : "text-charcoal")}>
         PrimeCoat
       </span>
     </Link>

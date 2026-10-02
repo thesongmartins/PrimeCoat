@@ -17,11 +17,11 @@ export function Header() {
       >
         Skip to content
       </a>
-      <Container className="flex h-16 items-center gap-4">
+      <Container className="flex h-16 items-center gap-2 sm:gap-4">
         <div className="flex items-center gap-1 lg:hidden">
           <MobileNav />
         </div>
-        <Logo className="lg:mr-6" />
+        <Logo className="min-w-0 lg:mr-6" />
         <nav aria-label="Primary" className="hidden lg:block">
           <ul className="flex items-center gap-7">
             {NAV_LINKS.map((l) => (
