@@ -18,7 +18,7 @@ Nothing in the final product may be mocked, faked or stored only in the browser.
 
 | Layer | Choice | Notes |
 |---|---|---|
-| Framework | Next.js (App Router) | Server components by default; `"use client"` only where interactivity is needed. |
+| Framework | Next.js 16 (App Router, Turbopack) | Server components by default; `"use client"` only where interactivity is needed. `proxy.ts` not `middleware.ts`; async `params`/`searchParams`; `error.tsx` receives `retry`. Docs are bundled at `node_modules/next/dist/docs/`. |
 | Language | TypeScript, `strict: true` | No `any` without a comment explaining why. |
 | Styling | Tailwind CSS v4 | Design tokens in `app/globals.css` under `@theme`. |
 | Database / Auth | Supabase (Postgres + Auth) | `@supabase/ssr` for cookie-based sessions. |
@@ -41,7 +41,7 @@ Next.js (Vercel)
   ├─ app/ (routes)            ──► Supabase JS (anon key + user cookie)  ──► Postgres (RLS enforced)
   ├─ app/api/orders/route.ts ──► rpc('create_order')  (atomic, server-priced)
   │                           ──► lib/mailgun/send.ts ──► Mailgun API ──► customer inbox
-  └─ middleware.ts            ──► refresh session, protect /checkout /orders /account
+  └─ proxy.ts                 ──► refresh session, protect /checkout /orders /account
 ```
 
 Key principles:
@@ -58,7 +58,7 @@ Key principles:
 |---|---|---|
 | `client.ts` | Client components | anon |
 | `server.ts` | Server components, route handlers, server actions | anon + cookies |
-| `middleware.ts` | `middleware.ts` only | anon + cookies |
+| `proxy.ts` | `proxy.ts` only | anon + cookies |
 | `admin.ts` | Scripts and `lib/orders/mark-email-status.ts` only | service role — **never import in anything that can be bundled for the browser** |
 
 ### Authentication flow
@@ -66,7 +66,7 @@ Key principles:
 1. `/login` renders a **Sign in with Google** button (client component) that calls `supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: `${origin}/auth/callback?next=…` } })`.
 2. Google → Supabase (`https://<ref>.supabase.co/auth/v1/callback`) → our `/auth/callback?code=…`.
 3. `app/auth/callback/route.ts` calls `exchangeCodeForSession(code)` and redirects to `next` (sanitised to a same-origin path).
-4. `middleware.ts` refreshes the session on every matched request and redirects anonymous users away from protected routes to `/login?next=<path>`.
+4. `proxy.ts` (Next 16's replacement for `middleware.ts`) refreshes the session on every matched request and redirects anonymous users away from protected routes to `/login?next=<path>`.
 5. A Postgres trigger on `auth.users` inserts the `profiles` row.
 6. Sign-out is a server action (`app/auth/actions.ts`) calling `supabase.auth.signOut()` and redirecting home.
 
@@ -84,62 +84,74 @@ See `PRD.md` §9. Implementation lives in:
 
 ```
 app/
-  (marketing)/          homepage, about, contact, projects, services  — shared marketing layout
-  (shop)/               shop, products/[slug]                          — shop layout
-  cart/                 cart page
-  checkout/             checkout page + confirmation/[orderNumber]
-  orders/               list + [id]
+  layout.tsx            root layout: fonts, Header, Footer, CartHydration
+  page.tsx              homepage
+  shop/                 product grid with URL-driven filters (+ loading.tsx)
+  products/[slug]/      product detail (+ not-found.tsx)
+  services/             painting services + request form
+  projects/             gallery with category filter
+  about/  contact/
+  cart/                 client-rendered cart
+  checkout/             checkout form; confirmation/[orderNumber]/
+  orders/               list; [id]/ detail (+ not-found.tsx)
   account/
   login/
-  auth/callback/        OAuth code exchange (route handler)
-  auth/actions.ts       sign-out server action
-  api/orders/           POST create order
-  api/service-requests/ POST painting service request
+  auth/callback/        OAuth code exchange (route handler)            [Phase 3]
+  auth/actions.ts       sign-out server action                         [Phase 3]
+  api/orders/           POST create order                              [Phase 5]
+  api/service-requests/ POST painting service request                  [Phase 5]
+  not-found.tsx  error.tsx
+proxy.ts                Next 16 replacement for middleware.ts          [Phase 3]
 components/
-  ui/                   primitives: Button, Input, Select, Badge, Skeleton, Sheet, Dialog …
-  layout/               Header, Footer, MobileNav, Container
-  shop/                 ProductCard, ProductGrid, Filters, SortSelect, ProductGallery …
-  cart/                 CartLine, CartSummary, CartBadge
+  ui/                   primitives: Button/ButtonLink, Input/Textarea/Select/Label/FieldError,
+                        Badge, Skeleton, Container, SectionHeading, EmptyState, Price,
+                        QuantityStepper, StockBadge, ColourSwatch
+  layout/               Header, Footer, Logo, MobileNav (portal), NavLink, SearchForm, AccountMenu
+  shop/                 ProductCard, ProductGrid, Filters, SortSelect, CategoryTiles,
+                        ProductPurchasePanel, Breadcrumbs
+  cart/                 CartView, CartLine, CartSummary, CartBadge, AddToCartButton, CartHydration
   checkout/             CheckoutForm, OrderSummary
-  orders/               OrderList, OrderCard, OrderDetail, StatusBadge
+  orders/               OrderList, OrderDetail, OrderStatusBadge
+  account/              AccountShell, AccountNav
+  auth/                 GoogleSignInButton
   services/             ServiceCard, ServiceRequestForm
-  marketing/            Hero, Categories, WhyPrimeCoat, ProjectsGallery
+  marketing/            Hero, WhyPrimeCoat, ServicesTeaser, ProjectsGallery, ConsultationCta
 lib/
-  supabase/             clients (see above) + database.types.ts (generated)
-  mailgun/              send.ts, templates/order-confirmation.ts
-  orders/               server helpers (fetch orders, mark email status)
-  products/             server helpers (queries)
-  cart/                 store.ts (Zustand), calculations.ts (pure functions)
-  validations/          checkout.ts, cart.ts, service-request.ts
-  utils/                format-currency.ts, cn.ts, dates.ts, nigeria-states.ts
-types/                  hand-written domain types (Product, Order, CartItem …)
-supabase/
-  migrations/           timestamped SQL, applied in order
-  seed.sql              product catalogue
-tests/                  Vitest (mirrors lib/ structure)
-public/
-  images/products/      SVG/PNG product renders
-  images/projects/      gallery imagery
+  supabase/             clients + database.types.ts (generated)       [Phase 3/4]
+  mailgun/              send.ts, templates/order-confirmation.ts      [Phase 7]
+  orders/               queries.ts (server-only; stubbed until Phase 6)
+  products/             seed-data.ts (static catalogue), queries.ts (filter/sort API)
+  cart/                 store.ts (Zustand, persisted), calculations.ts (pure, tested)
+  validations/          checkout.ts, service-request.ts (Zod, shared client/server)
+  content/              images.ts, services.ts, projects.ts, service-type.ts
+  utils/                cn, format-currency, dates, nigeria-states, slugify, logger, redirects
+types/                  product, cart, order, service-request (camelCase app types)
+supabase/migrations/    timestamped SQL                                [Phase 4]
+scripts/                generate-product-images.ts, seed.ts, mailgun-test.ts, verify-rls.ts
+tests/                  Vitest, mirrors lib/
+public/images/products/ generated SVG renders (one per slug) + placeholder.svg
 ```
 
 Rules:
-- Route segments are kebab-case. Components are PascalCase files? **No** — component files are kebab-case (`product-card.tsx`) exporting PascalCase components.
+- Route segments are kebab-case. Component files are kebab-case (`product-card.tsx`) exporting PascalCase components.
 - One component per file. Co-locate small sub-components only if unexported.
 - Server-only modules import `server-only` at the top.
 - Never put business logic in components; put it in `lib/`.
-
----
+- App types are camelCase; database rows are snake_case. Map at the query layer (`lib/*/queries.ts`), never in components.
+- Pages typed with the generated `PageProps<'/route'>` helper; `params`/`searchParams` are Promises (Next 16).
 
 ## 5. Coding conventions
 
 - Prefer React Server Components. Add `"use client"` only to leaf components that need state, effects or browser APIs.
 - Data fetching happens in server components or route handlers, never in `useEffect`, except for cart hydration.
-- Use `async` server components and `Suspense` with skeletons for loading states; provide `loading.tsx`, `error.tsx` and `not-found.tsx` per route group.
+- Use `async` server components and `Suspense` with skeletons for loading states; provide `error.tsx` and `not-found.tsx` per route group. Do **not** add `loading.tsx` above a segment that calls `notFound()` — the streamed shell turns the 404 into a 200 (this is why `app/orders/` has no loading file).
 - All forms: react-hook-form + `zodResolver` with the schema from `lib/validations/`. Show inline errors tied to inputs via `aria-describedby`.
 - Currency: store as `numeric(12,2)` NGN; format with `formatNaira()` from `lib/utils/format-currency.ts`. Never do float arithmetic on totals in the client beyond display estimates.
 - Dates: store `timestamptz`; format with `Intl.DateTimeFormat('en-NG')`.
 - Accessibility: every interactive element is a `<button>` or `<a>`; icon-only buttons have `aria-label`; images have meaningful `alt` or `alt=""` when decorative.
-- No inline styles except CSS custom-property colour swatches.
+- No inline styles except CSS custom-property colour swatches (`className="swatch" style={{ "--swatch": hex }}`).
+- Fixed-position overlays rendered from inside the sticky header must use `createPortal(…, document.body)`; the header's `backdrop-filter` otherwise becomes their containing block.
+- Product images are generated SVGs: `node --import tsx scripts/generate-product-images.ts` after changing `lib/products/seed-data.ts`.
 - No `console.log` in committed code; use `lib/utils/logger.ts` (`logger.error('orders.email_failed', { orderNumber, message })`). Never log secrets, tokens or full request bodies.
 - Commit messages follow Conventional Commits (`feat:`, `fix:`, `chore:`, `docs:`, `test:`).
 
@@ -264,3 +276,13 @@ Rules:
 3. Work in small, verifiable steps; run `pnpm lint && pnpm typecheck && pnpm test` before each commit.
 4. Update `CONTEXT.md` (and `README.md` if setup changed) at the end of the session.
 5. Tell the user exactly which external configuration they must do by hand, following the "human-only configuration" format: what account, where to go, what to click, what to create, what to copy, where to put it, what redirect URL, how to verify.
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->

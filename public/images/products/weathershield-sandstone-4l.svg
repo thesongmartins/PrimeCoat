@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800" width="800" height="800" role="img"><title>WeatherShield Exterior Emulsion 4 L</title>
+<defs>
+  <linearGradient id="metal" x1="0" x2="1">
+    <stop offset="0" stop-color="#B9B4AC"/>
+    <stop offset="0.2" stop-color="#ECE9E3"/>
+    <stop offset="0.55" stop-color="#D9D5CE"/>
+    <stop offset="1" stop-color="#B9B4AC"/>
+  </linearGradient>
+  <radialGradient id="floor" cx="0.5" cy="0.5" r="0.5">
+    <stop offset="0" stop-color="#1B1B1F" stop-opacity="0.18"/>
+    <stop offset="1" stop-color="#1B1B1F" stop-opacity="0"/>
+  </radialGradient>
+</defs>
+<rect width="800" height="800" fill="#F3EFE8"/>
+<ellipse cx="400" cy="690" rx="260" ry="40" fill="url(#floor)"/>
+
+<rect x="250" y="220" width="300" height="430" fill="url(#metal)"/>
+<ellipse cx="400" cy="650" rx="150" ry="26" fill="#B9B4AC"/>
+<rect x="250" y="220" width="300" height="404" fill="url(#metal)"/>
+
+<rect x="264" y="300" width="272" height="290" fill="#D4C4A8" stroke="rgba(0,0,0,0.15)" stroke-width="1.5"/>
+<text x="400" y="338" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="13" letter-spacing="4" font-weight="700" fill="#F2C4B3">PRIMECOAT</text>
+<line x1="378" y1="350" x2="422" y2="350" stroke="#F2C4B3" stroke-width="1.5"/>
+<text x="400" y="404.4" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="26" fill="#FAF8F5">WeatherShield</text><text x="400" y="434.4" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="26" fill="#FAF8F5">Exterior Emulsion</text>
+<text x="400" y="480.4" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="17" fill="rgba(250,248,245,0.78)">Sandstone · Smooth matt</text>
+<text x="400" y="568" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="18" font-weight="700" fill="#FAF8F5">4 L</text>
+<ellipse cx="400" cy="220" rx="150" ry="26" fill="#B9B4AC"/>
+<ellipse cx="400" cy="216" rx="140" ry="22" fill="#D4C4A8" stroke="#B9B4AC" stroke-width="2"/>
+<ellipse cx="400" cy="216" rx="110" ry="14" fill="none" stroke="rgba(0,0,0,0.12)" stroke-width="2"/>
+<path d="M 270 226 Q 400 100 530 226" fill="none" stroke="#1B1B1F" stroke-width="7" stroke-linecap="round"/>
+<circle cx="270" cy="228" r="7" fill="#1B1B1F"/><circle cx="530" cy="228" r="7" fill="#1B1B1F"/>
+</svg>

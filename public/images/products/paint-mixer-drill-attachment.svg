@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800" width="800" height="800" role="img"><title>Paint Mixer Drill Attachment</title>
+<defs>
+  <linearGradient id="metal" x1="0" x2="1">
+    <stop offset="0" stop-color="#B9B4AC"/>
+    <stop offset="0.2" stop-color="#ECE9E3"/>
+    <stop offset="0.55" stop-color="#D9D5CE"/>
+    <stop offset="1" stop-color="#B9B4AC"/>
+  </linearGradient>
+  <radialGradient id="floor" cx="0.5" cy="0.5" r="0.5">
+    <stop offset="0" stop-color="#1B1B1F" stop-opacity="0.18"/>
+    <stop offset="1" stop-color="#1B1B1F" stop-opacity="0"/>
+  </radialGradient>
+</defs>
+<rect width="800" height="800" fill="#F3EFE8"/>
+<ellipse cx="400" cy="690" rx="260" ry="40" fill="url(#floor)"/>
+
+<rect x="388" y="110" width="24" height="420" fill="url(#metal)" stroke="#B9B4AC"/>
+<rect x="380" y="110" width="40" height="70" fill="#B9B4AC"/>
+<path d="M 400 480 C 300 500 300 560 400 580 C 500 600 500 660 400 680" fill="none" stroke="#1B1B1F" stroke-width="16" stroke-linecap="round"/>
+<path d="M 400 480 C 500 500 500 560 400 580 C 300 600 300 660 400 680" fill="none" stroke="#1B1B1F" stroke-width="16" stroke-linecap="round" opacity="0.7"/>
+<circle cx="400" cy="680" r="18" fill="#C65D3B"/>
+<text x="400" y="60" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="14" letter-spacing="5" font-weight="700" fill="#C65D3B">PRIMECOAT</text>
+<text x="400" y="750" text-anchor="middle" font-family="Georgia, serif" font-size="28" fill="#1B1B1F">Paint Mixer Drill Attachment</text>
+</svg>
