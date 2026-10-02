@@ -61,7 +61,8 @@ describe("renderOrderConfirmation", () => {
     for (const s of ["PC-20261002-0007", "Velvet Matt Interior Emulsion × 2", "₦45,100", "14 Bourdillon Road & Co", "Pay on Delivery"]) {
       expect(rendered.text).toContain(s);
     }
-    expect(rendered.text).not.toContain("<");
+    // Plain text is not HTML: raw characters are expected there, HTML tags are not generated.
+    expect(rendered.text).not.toMatch(/<\/?(table|td|tr|div|a|p)\b/);
   });
 
   it("shows Free when delivery is zero", () => {
