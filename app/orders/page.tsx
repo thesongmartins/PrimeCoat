@@ -6,6 +6,9 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { ButtonLink } from "@/components/ui/button";
 import { getOrdersForCurrentUser } from "@/lib/orders/queries";
 
+// Session-dependent: never prerender or cache.
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = { title: "Order history", robots: { index: false } };
 
 export default async function OrdersPage() {

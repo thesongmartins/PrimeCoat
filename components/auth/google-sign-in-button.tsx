@@ -1,14 +1,51 @@
 "use client";
 
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { createClient } from "@/lib/supabase/client";
+import { isSupabaseConfigured } from "@/lib/env";
 
-/** Phase 3 wires this to supabase.auth.signInWithOAuth. */
 export function GoogleSignInButton({ next }: { next: string }) {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const configured = isSupabaseConfigured();
+
+  async function signIn() {
+    setError(null);
+    setLoading(true);
+    const supabase = createClient();
+    const redirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`;
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo,
+        queryParams: { access_type: "offline", prompt: "select_account" },
+      },
+    });
+    if (error) {
+      setError("We couldn't start Google sign-in. Please try again.");
+      setLoading(false);
+    }
+    // On success the browser navigates to Google; no further state needed.
+  }
+
   return (
-    <Button type="button" size="lg" variant="outline" className="w-full bg-white" data-next={next} disabled title="Google sign-in is enabled in the next phase">
-      <GoogleMark />
-      Continue with Google
-    </Button>
+    <div>
+      <Button type="button" size="lg" variant="outline" className="w-full bg-white" onClick={signIn} loading={loading} disabled={!configured}>
+        {!loading && <GoogleMark />}
+        Continue with Google
+      </Button>
+      {!configured && (
+        <p className="mt-3 text-xs leading-relaxed text-mute">
+          Sign-in is not configured yet. Set <code>NEXT_PUBLIC_SUPABASE_URL</code> and <code>NEXT_PUBLIC_SUPABASE_ANON_KEY</code>.
+        </p>
+      )}
+      {error && (
+        <p role="alert" className="mt-3 rounded-md border border-danger/30 bg-danger-100 px-4 py-3 text-sm text-danger">
+          {error}
+        </p>
+      )}
+    </div>
   );
 }
 

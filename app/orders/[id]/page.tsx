@@ -6,6 +6,9 @@ import { OrderDetail } from "@/components/orders/order-detail";
 import { ButtonLink } from "@/components/ui/button";
 import { getOrderById } from "@/lib/orders/queries";
 
+// Session-dependent: never prerender or cache.
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = { title: "Order details", robots: { index: false } };
 
 export default async function OrderPage(props: PageProps<"/orders/[id]">) {

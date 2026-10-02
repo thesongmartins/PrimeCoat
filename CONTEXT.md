@@ -11,7 +11,7 @@ This file is the hand-off between development sessions. Update it at the end of 
 | Planning docs (PRD, AGENTS, README, CONTEXT) | ✅ Complete |
 | Next.js scaffold | ✅ Next 16.3 · TS strict · Tailwind v4 · pnpm |
 | UI (homepage, shop, product, services, projects, cart, checkout, account, orders) | ✅ Complete against static catalogue; verified at 375 px and 1440 px |
-| Supabase Auth + Google OAuth | ⬜ Not started (needs user config) |
+| Supabase Auth + Google OAuth | 🟡 Code complete, **untested** — needs Supabase project + Google client from the user |
 | Database migrations + RLS + seed | ⬜ Not started |
 | Cart + checkout + `create_order` | ⬜ Not started |
 | Orders + account pages wired to DB | ⬜ Not started |
@@ -19,6 +19,29 @@ This file is the hand-off between development sessions. Update it at the end of 
 | Tests | ⬜ Not started |
 | Vercel deployment | ⬜ Not started (needs user config) |
 | Production E2E | ⬜ Not started |
+
+---
+
+## Session 3 — 2 October 2026 — Phase 3: Authentication (code written, awaiting credentials)
+
+### Completed
+- `lib/env.ts`: public env accessors, `isSupabaseConfigured()`, `requireServerEnv()`. The app renders fully when Supabase is not configured; auth-dependent UI degrades to "sign in" prompts instead of crashing.
+- `lib/supabase/client.ts` (browser), `server.ts` (cookies-based, server-only), `middleware.ts` (`updateSession`, protected-path logic).
+- `proxy.ts` (Next 16 middleware): refreshes the session with `auth.getUser()`, redirects anonymous users from `/checkout`, `/orders`, `/account` to `/login?next=…`, and bounces signed-in users off `/login`.
+- `app/auth/callback/route.ts`: exchanges `?code` for a session, sanitises `next`, honours `x-forwarded-host` in production, redirects to `/login?error=auth` on failure or when unconfigured.
+- `app/auth/actions.ts`: `signOut` server action.
+- `lib/auth/session.ts`: `getCurrentUser()` (React-cached) mapping Google `user_metadata` to `{ id, email, fullName, avatarUrl, createdAt }`.
+- `GoogleSignInButton` calls `signInWithOAuth({ provider: "google", redirectTo: <origin>/auth/callback?next=… })`; disabled with an explanatory note when unconfigured.
+- `AccountMenu` is session-aware (avatar popover with Account / Orders / Sign out). `SignOutButton` component.
+- `/login` redirects signed-in users; `/account` renders profile + recent orders + sign-out; `/checkout` pre-fills name/email from the session and locks the email field.
+- Protected and session pages marked `dynamic = "force-dynamic"`.
+- `pnpm typecheck`, `pnpm lint`, `pnpm build` pass. Verified in unconfigured mode: all pages 200, `/auth/callback` without a code → 307 to `/login?error=auth`.
+
+### Not yet verified (blocked on user configuration)
+- Real Google sign-in round-trip, session persistence after browser restart, proxy redirects with a live session, sign-out. These need `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` in `.env.local` and the Google provider enabled in Supabase. See README → *Supabase setup* and *Google OAuth setup*.
+
+### Next recommended task
+Once credentials exist: run `pnpm dev`, sign in at `/login`, confirm redirect to `/account` with avatar, visit `/orders` (should render, empty), sign out, confirm `/orders` redirects to `/login?next=/orders`. Then **Phase 4 — Database**: migrations (enums, tables, RLS, `handle_new_user`, `calculate_delivery_fee`, `generate_order_number`, `create_order`), `supabase/seed.sql` generated from `lib/products/seed-data.ts`, switch `lib/products/queries.ts` to Supabase, generate `database.types.ts`.
 
 ---
 
