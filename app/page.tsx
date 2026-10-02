@@ -11,6 +11,8 @@ import { ProductGrid } from "@/components/shop/product-grid";
 import { getFeaturedProducts } from "@/lib/products/queries";
 import { PROJECTS } from "@/lib/content/projects";
 
+export const revalidate = 600;
+
 export default async function HomePage() {
   const featured = await getFeaturedProducts(8);
   const projects = PROJECTS.filter((p) => ["p1", "p2", "p3", "p4", "p6", "p7"].includes(p.id));

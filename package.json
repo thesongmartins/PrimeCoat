@@ -10,12 +10,14 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "db:push": "supabase db push",
+    "db:push": "node --import tsx scripts/db.ts push",
     "db:seed": "node --import tsx scripts/seed.ts",
-    "supabase:types": "supabase gen types typescript --linked > lib/supabase/database.types.ts",
     "mailgun:test": "node --import tsx scripts/mailgun-test.ts",
     "verify:rls": "node --import tsx scripts/verify-rls.ts",
-    "check:secrets": "node --import tsx scripts/check-secrets.ts"
+    "check:secrets": "node --import tsx scripts/check-secrets.ts",
+    "db:types": "node --import tsx scripts/db.ts types",
+    "seed:sql": "node --import tsx scripts/generate-seed-sql.ts",
+    "images:generate": "node --import tsx scripts/generate-product-images.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

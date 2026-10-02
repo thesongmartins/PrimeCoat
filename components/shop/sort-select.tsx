@@ -2,7 +2,7 @@
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Select, Label } from "@/components/ui/input";
-import { SORT_OPTIONS } from "@/lib/products/queries";
+import { SORT_OPTIONS } from "@/lib/products/filters";
 
 export function SortSelect({ value }: { value: string }) {
   const router = useRouter();
