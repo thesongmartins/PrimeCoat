@@ -17,8 +17,26 @@ This file is the hand-off between development sessions. Update it at the end of 
 | Orders + account pages wired to DB | ✅ Verified (owner sees, other user gets 404) |
 | Mailgun confirmation email | 🟡 Implemented; API accepts credentials; **sandbox rejects recipients not on the Authorized list** |
 | Tests | ✅ 105 Vitest tests passing |
-| Vercel deployment | ⬜ Not started (needs user config) |
-| Production E2E | ⬜ Not started |
+| Vercel deployment | ✅ Live at https://primecoatt.vercel.app (user deployed); Supabase + Mailgun env present |
+| Production E2E | 🟡 Automated order flow passes on production; human Google sign-in + real email delivery pending |
+
+---
+
+## Session 6 — 2 October 2026 — Phase 9 deployment verified
+
+### Verified on https://primecoatt.vercel.app
+- `/`, `/shop` (32 products from Supabase), product pages, `/cart`, `/login` all 200. `/orders` and `/checkout` → 307 to `/login?next=…`. `/auth/callback` without code → `/login?error=auth`. Security headers present.
+- Full automated order flow (two throwaway users, deleted afterwards): order `PC-20261002-0004` created from production, totals 42,600 + 2,500 = 45,100, two snapshot items, email = account email, `/orders` and `/orders/[id]` render, user B gets 404 everywhere and zero rows via REST, anonymous redirected, cart cleared, fresh session still sees the order.
+- `confirmation_email_status = 'failed'` with the Mailgun **403 authorised-recipient** reason — proves `MAILGUN_*` variables are set on Vercel and the only blocker is the sandbox recipient list.
+
+### Not verifiable from here (user must confirm)
+- Supabase → Authentication → URL Configuration: *Site URL* = `https://primecoatt.vercel.app`; *Redirect URLs* include `https://primecoatt.vercel.app/auth/callback` and `http://localhost:3000/auth/callback`. Without the production entry, Google sign-in would bounce back to the Site URL instead of production.
+- Vercel env `NEXT_PUBLIC_SITE_URL=https://primecoatt.vercel.app` (used only for links inside emails; OAuth uses the browser origin).
+- Google Cloud consent screen: the reviewer's Google account is a test user, or the app is published.
+- Mailgun authorised recipient for the Google account email.
+
+### Next recommended task
+Phase 10: the user performs the 12-step acceptance test in README on production with a real Google account and confirms the Mailgun email arrives. Then flip the status table to ✅ and record the order number here.
 
 ---
 
