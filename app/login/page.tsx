@@ -1,10 +1,15 @@
 import type { Metadata } from "next";
 import Image from "next/image";
+import { redirect } from "next/navigation";
 import { Container } from "@/components/ui/container";
 import { Logo } from "@/components/layout/logo";
 import { GoogleSignInButton } from "@/components/auth/google-sign-in-button";
 import { IMAGES } from "@/lib/content/images";
 import { sanitizeNextPath } from "@/lib/utils/redirects";
+import { getCurrentUser } from "@/lib/auth/session";
+
+// Session-dependent: never prerender or cache.
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = { title: "Sign in", robots: { index: false } };
 
@@ -12,6 +17,9 @@ export default async function LoginPage(props: PageProps<"/login">) {
   const sp = await props.searchParams;
   const next = sanitizeNextPath(typeof sp.next === "string" ? sp.next : undefined);
   const error = typeof sp.error === "string" ? sp.error : undefined;
+
+  const user = await getCurrentUser();
+  if (user) redirect(next);
 
   return (
     <Container className="py-10 sm:py-16">
@@ -27,7 +35,7 @@ export default async function LoginPage(props: PageProps<"/login">) {
           </div>
           {error && (
             <p role="alert" className="mt-4 rounded-md border border-danger/30 bg-danger-100 px-4 py-3 text-sm text-danger">
-              {error === "auth" ? "We couldn't complete sign-in with Google. Please try again." : error}
+              {error === "auth" ? "We couldn't complete sign-in with Google. Please try again." : "Something went wrong signing you in. Please try again."}
             </p>
           )}
           <p className="mt-8 text-xs leading-relaxed text-mute">
