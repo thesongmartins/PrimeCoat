@@ -1,8 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
-import { Package, User, LogOut } from "lucide-react";
+import { Package, User } from "lucide-react";
 import { getCurrentUser } from "@/lib/auth/session";
-import { signOut } from "@/app/auth/actions";
+import { SignOutButton } from "@/components/auth/sign-out-button";
 import { cn } from "@/lib/utils/cn";
 
 /** Session-aware account control in the header. Server component. */
@@ -68,15 +68,10 @@ export async function AccountMenu({ className }: { className?: string }) {
           <Package className="size-4 text-mute" aria-hidden="true" /> Orders
         </Link>
         <div className="my-1 border-t border-stone" />
-        <form action={signOut}>
-          <button
-            type="submit"
-            className="flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-left text-sm hover:bg-stone-200"
-          >
-            <LogOut className="size-4 text-mute" aria-hidden="true" />
-            Sign out
-          </button>
-        </form>
+        <SignOutButton
+          unstyled
+          className="flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-left text-sm hover:bg-stone-200 disabled:opacity-50 [&>svg]:text-mute"
+        />
       </div>
     </details>
   );
