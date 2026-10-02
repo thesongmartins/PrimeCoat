@@ -1,0 +1,234 @@
+
+export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[]
+
+export type Database = {
+  
+  "public": {
+          Tables: {
+            "order_items": {
+                  Row: {
+                    "created_at": string,"id": string,"order_id": string,"product_id": string | null,"product_image_url": string | null,"product_name": string,"quantity": number,"subtotal": number,"unit_price": number
+                  }
+                  Insert: {
+                    "created_at"?: string,"id"?: string,"order_id": string,"product_id"?: string | null,"product_image_url"?: string | null,"product_name": string,"quantity": number,"subtotal": number,"unit_price": number
+                  }
+                  Update: {
+                    "created_at"?: string,"id"?: string,"order_id"?: string,"product_id"?: string | null,"product_image_url"?: string | null,"product_name"?: string,"quantity"?: number,"subtotal"?: number,"unit_price"?: number
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "order_items_order_id_fkey"
+      columns: ["order_id"]
+isOneToOne: false
+      referencedRelation: "orders"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "order_items_product_id_fkey"
+      columns: ["product_id"]
+isOneToOne: false
+      referencedRelation: "products"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"order_number_counters": {
+                  Row: {
+                    "day": string,"last_value": number
+                  }
+                  Insert: {
+                    "day": string,"last_value"?: number
+                  }
+                  Update: {
+                    "day"?: string,"last_value"?: number
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"orders": {
+                  Row: {
+                    "city": string,"confirmation_email_error": string | null,"confirmation_email_sent_at": string | null,"confirmation_email_status": Database["public"]['Enums']["email_status"],"created_at": string,"customer_name": string,"delivery_address": string,"delivery_fee": number,"delivery_instructions": string | null,"email": string,"id": string,"order_number": string,"payment_method": Database["public"]['Enums']["payment_method"],"payment_status": Database["public"]['Enums']["payment_status"],"phone": string,"state": string,"status": Database["public"]['Enums']["order_status"],"subtotal": number,"total": number,"updated_at": string,"user_id": string
+                  }
+                  Insert: {
+                    "city": string,"confirmation_email_error"?: string | null,"confirmation_email_sent_at"?: string | null,"confirmation_email_status"?: Database["public"]['Enums']["email_status"],"created_at"?: string,"customer_name": string,"delivery_address": string,"delivery_fee": number,"delivery_instructions"?: string | null,"email": string,"id"?: string,"order_number": string,"payment_method"?: Database["public"]['Enums']["payment_method"],"payment_status"?: Database["public"]['Enums']["payment_status"],"phone": string,"state": string,"status"?: Database["public"]['Enums']["order_status"],"subtotal": number,"total": number,"updated_at"?: string,"user_id": string
+                  }
+                  Update: {
+                    "city"?: string,"confirmation_email_error"?: string | null,"confirmation_email_sent_at"?: string | null,"confirmation_email_status"?: Database["public"]['Enums']["email_status"],"created_at"?: string,"customer_name"?: string,"delivery_address"?: string,"delivery_fee"?: number,"delivery_instructions"?: string | null,"email"?: string,"id"?: string,"order_number"?: string,"payment_method"?: Database["public"]['Enums']["payment_method"],"payment_status"?: Database["public"]['Enums']["payment_status"],"phone"?: string,"state"?: string,"status"?: Database["public"]['Enums']["order_status"],"subtotal"?: number,"total"?: number,"updated_at"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"painting_service_requests": {
+                  Row: {
+                    "address": string,"created_at": string,"email": string,"id": string,"message": string | null,"name": string,"phone": string,"preferred_date": string | null,"property_type": Database["public"]['Enums']["property_type"],"service_type": Database["public"]['Enums']["service_type"],"status": Database["public"]['Enums']["service_request_status"],"user_id": string | null
+                  }
+                  Insert: {
+                    "address": string,"created_at"?: string,"email": string,"id"?: string,"message"?: string | null,"name": string,"phone": string,"preferred_date"?: string | null,"property_type": Database["public"]['Enums']["property_type"],"service_type": Database["public"]['Enums']["service_type"],"status"?: Database["public"]['Enums']["service_request_status"],"user_id"?: string | null
+                  }
+                  Update: {
+                    "address"?: string,"created_at"?: string,"email"?: string,"id"?: string,"message"?: string | null,"name"?: string,"phone"?: string,"preferred_date"?: string | null,"property_type"?: Database["public"]['Enums']["property_type"],"service_type"?: Database["public"]['Enums']["service_type"],"status"?: Database["public"]['Enums']["service_request_status"],"user_id"?: string | null
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"products": {
+                  Row: {
+                    "category": Database["public"]['Enums']["product_category"],"colour_hex": string | null,"colour_name": string | null,"coverage": string | null,"created_at": string,"description": string,"finish": string | null,"id": string,"image_url": string,"is_active": boolean,"is_featured": boolean,"name": string,"price": number,"short_description": string,"size": string | null,"slug": string,"stock_quantity": number,"updated_at": string
+                  }
+                  Insert: {
+                    "category": Database["public"]['Enums']["product_category"],"colour_hex"?: string | null,"colour_name"?: string | null,"coverage"?: string | null,"created_at"?: string,"description"?: string,"finish"?: string | null,"id"?: string,"image_url": string,"is_active"?: boolean,"is_featured"?: boolean,"name": string,"price": number,"short_description"?: string,"size"?: string | null,"slug": string,"stock_quantity"?: number,"updated_at"?: string
+                  }
+                  Update: {
+                    "category"?: Database["public"]['Enums']["product_category"],"colour_hex"?: string | null,"colour_name"?: string | null,"coverage"?: string | null,"created_at"?: string,"description"?: string,"finish"?: string | null,"id"?: string,"image_url"?: string,"is_active"?: boolean,"is_featured"?: boolean,"name"?: string,"price"?: number,"short_description"?: string,"size"?: string | null,"slug"?: string,"stock_quantity"?: number,"updated_at"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"profiles": {
+                  Row: {
+                    "avatar_url": string | null,"created_at": string,"email": string | null,"full_name": string | null,"id": string,"phone": string | null,"updated_at": string
+                  }
+                  Insert: {
+                    "avatar_url"?: string | null,"created_at"?: string,"email"?: string | null,"full_name"?: string | null,"id": string,"phone"?: string | null,"updated_at"?: string
+                  }
+                  Update: {
+                    "avatar_url"?: string | null,"created_at"?: string,"email"?: string | null,"full_name"?: string | null,"id"?: string,"phone"?: string | null,"updated_at"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
+                }
+          }
+          Views: {
+            [_ in never]: never
+          }
+          Functions: {
+            "calculate_delivery_fee":
+{ Args: { "p_state": string,"p_subtotal": number }; Returns: number
+                           },
+"create_order":
+{ Args: { "p_customer": Json,"p_items": Json }; Returns: Json
+                           },
+"generate_order_number":
+{ Args: Record<PropertyKey, never>; Returns: string
+                           }
+          }
+          Enums: {
+            "email_status": "pending"|"sent"|"failed","order_status": "pending"|"confirmed"|"processing"|"out_for_delivery"|"delivered"|"cancelled","payment_method": "pay_on_delivery"|"card"|"bank_transfer","payment_status": "unpaid"|"paid"|"refunded","product_category": "interior"|"exterior"|"ceiling"|"primer"|"gloss"|"textured"|"wood_finish"|"metal_finish"|"accessories"|"tools","property_type": "flat"|"detached_house"|"duplex"|"office"|"shop"|"warehouse"|"other","service_request_status": "new"|"contacted"|"scheduled"|"completed"|"closed","service_type": "residential"|"commercial"|"interior"|"exterior"|"colour_consultation"|"surface_preparation"|"repainting"
+          }
+          CompositeTypes: {
+            [_ in never]: never
+          }
+        }
+}
+
+type DatabaseWithoutInternals = Omit<Database, '__InternalSupabase'>
+
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
+
+export type Tables<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    : never = never
+> = DefaultSchemaTableNameOrOptions extends { schema: keyof DatabaseWithoutInternals }
+  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+      Row: infer R
+    }
+    ? R
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+  ? (DefaultSchema["Tables"] & DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+      Row: infer R
+    }
+    ? R
+    : never
+  : never
+
+export type TablesInsert<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never
+> = DefaultSchemaTableNameOrOptions extends { schema: keyof DatabaseWithoutInternals }
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Insert: infer I
+    }
+    ? I
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+  ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+      Insert: infer I
+    }
+    ? I
+    : never
+  : never
+
+export type TablesUpdate<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never
+> = DefaultSchemaTableNameOrOptions extends { schema: keyof DatabaseWithoutInternals }
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Update: infer U
+    }
+    ? U
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+  ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+      Update: infer U
+    }
+    ? U
+    : never
+  : never
+
+export type Enums<
+  DefaultSchemaEnumNameOrOptions extends
+    | keyof DefaultSchema["Enums"]
+    | { schema: keyof DatabaseWithoutInternals },
+  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    : never = never
+> = DefaultSchemaEnumNameOrOptions extends { schema: keyof DatabaseWithoutInternals }
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+  ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+  : never
+
+export type CompositeTypes<
+  PublicCompositeTypeNameOrOptions extends
+    | keyof DefaultSchema["CompositeTypes"]
+    | { schema: keyof DatabaseWithoutInternals },
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never = never
+> = PublicCompositeTypeNameOrOptions extends { schema: keyof DatabaseWithoutInternals }
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+  ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+  : never
+
+export const Constants = {
+  "public": {
+          Enums: {
+            "email_status": ["pending", "sent", "failed"],"order_status": ["pending", "confirmed", "processing", "out_for_delivery", "delivered", "cancelled"],"payment_method": ["pay_on_delivery", "card", "bank_transfer"],"payment_status": ["unpaid", "paid", "refunded"],"product_category": ["interior", "exterior", "ceiling", "primer", "gloss", "textured", "wood_finish", "metal_finish", "accessories", "tools"],"property_type": ["flat", "detached_house", "duplex", "office", "shop", "warehouse", "other"],"service_request_status": ["new", "contacted", "scheduled", "completed", "closed"],"service_type": ["residential", "commercial", "interior", "exterior", "colour_consultation", "surface_preparation", "repainting"]
+          }
+        }
+} as const

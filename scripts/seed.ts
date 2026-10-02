@@ -31,9 +31,13 @@ const rows = SEED_PRODUCTS.map((p) => ({
   is_featured: p.isFeatured,
 }));
 
-const { error, count } = await supabase.from("products").upsert(rows, { onConflict: "slug", count: "exact" });
-if (error) {
-  console.error("Seed failed:", error.message);
-  process.exit(1);
+async function main() {
+  const { error, count } = await supabase.from("products").upsert(rows, { onConflict: "slug", count: "exact" });
+  if (error) {
+    console.error("Seed failed:", error.message);
+    process.exit(1);
+  }
+  console.log(`Seeded ${count ?? rows.length} products.`);
 }
-console.log(`Seeded ${count ?? rows.length} products.`);
+
+void main();
