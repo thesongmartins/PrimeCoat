@@ -1,0 +1,76 @@
+@import "tailwindcss";
+
+@theme {
+  /* Palette — defined once; see AGENTS.md §5 */
+  --color-ink: #121214;
+  --color-charcoal: #1b1b1f;
+  --color-charcoal-800: #2a2a30;
+  --color-charcoal-600: #4a4a52;
+  --color-mute: #6b665f;
+  --color-stone-400: #c9c2b8;
+  --color-stone: #e8e3dc;
+  --color-stone-200: #f0ece6;
+  --color-cream: #f3efe8;
+  --color-warm-white: #faf8f5;
+  --color-terracotta: #c65d3b;
+  --color-terracotta-700: #a84a2c;
+  --color-terracotta-100: #f6e4dc;
+  --color-sage: #7d8f7a;
+  --color-sage-100: #e6ebe4;
+  --color-ochre: #d9a441;
+  --color-ochre-100: #f8edd3;
+  --color-success: #3f7d4e;
+  --color-success-100: #e2f0e5;
+  --color-danger: #b23a3a;
+  --color-danger-100: #f7e1e1;
+
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-fraunces), ui-serif, Georgia, serif;
+
+  --radius-sm: 0.25rem;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.5rem;
+
+  --shadow-card: 0 1px 2px rgb(27 27 31 / 0.06), 0 4px 16px -4px rgb(27 27 31 / 0.08);
+  --shadow-lift: 0 2px 4px rgb(27 27 31 / 0.08), 0 12px 32px -8px rgb(27 27 31 / 0.18);
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply bg-warm-white text-charcoal font-sans antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  h1, h2, h3, h4 {
+    @apply font-display tracking-tight text-balance;
+  }
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-terracotta;
+  }
+  ::selection {
+    background: #f6e4dc;
+  }
+  input[type="number"]::-webkit-outer-spin-button,
+  input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  input[type="number"] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+  }
+}
+
+@layer utilities {
+  .eyebrow {
+    @apply text-[0.6875rem] font-semibold uppercase tracking-[0.18em] text-terracotta;
+  }
+  .prose-measure {
+    max-width: 62ch;
+  }
+  .swatch {
+    background: var(--swatch);
+  }
+}

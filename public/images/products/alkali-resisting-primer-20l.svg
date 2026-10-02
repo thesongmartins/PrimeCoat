@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800" width="800" height="800" role="img"><title>Alkali-Resisting Primer 20 L</title>
+<defs>
+  <linearGradient id="metal" x1="0" x2="1">
+    <stop offset="0" stop-color="#B9B4AC"/>
+    <stop offset="0.2" stop-color="#ECE9E3"/>
+    <stop offset="0.55" stop-color="#D9D5CE"/>
+    <stop offset="1" stop-color="#B9B4AC"/>
+  </linearGradient>
+  <radialGradient id="floor" cx="0.5" cy="0.5" r="0.5">
+    <stop offset="0" stop-color="#1B1B1F" stop-opacity="0.18"/>
+    <stop offset="1" stop-color="#1B1B1F" stop-opacity="0"/>
+  </radialGradient>
+</defs>
+<rect width="800" height="800" fill="#F3EFE8"/>
+<ellipse cx="400" cy="690" rx="260" ry="40" fill="url(#floor)"/>
+
+<path d="M 215 200 L 585 200 L 555 660 L 245 660 Z" fill="url(#metal)"/>
+<ellipse cx="400" cy="660" rx="155" ry="24" fill="#B9B4AC"/>
+<path d="M 215 200 L 585 200 L 556 650 L 244 650 Z" fill="url(#metal)"/>
+
+<rect x="252" y="280" width="296" height="300" fill="#FFFFFF" stroke="#D6CFC4" stroke-width="1.5"/>
+<text x="400" y="318" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="13" letter-spacing="4" font-weight="700" fill="#C65D3B">PRIMECOAT</text>
+<line x1="378" y1="330" x2="422" y2="330" stroke="#C65D3B" stroke-width="1.5"/>
+<text x="400" y="388" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="26" fill="#1B1B1F">Alkali-Resisting</text><text x="400" y="418" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="26" fill="#1B1B1F">Primer</text>
+<text x="400" y="464" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="17" fill="#6B665F">Matt</text>
+<text x="400" y="558" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="18" font-weight="700" fill="#1B1B1F">20 L</text>
+<ellipse cx="400" cy="200" rx="185" ry="30" fill="#B9B4AC"/>
+<ellipse cx="400" cy="195" rx="175" ry="26" fill="#D9D5CE" stroke="#B9B4AC" stroke-width="2"/>
+<ellipse cx="400" cy="195" rx="120" ry="16" fill="none" stroke="rgba(0,0,0,0.12)" stroke-width="2"/>
+<path d="M 232 206 Q 400 70 568 206" fill="none" stroke="#1B1B1F" stroke-width="8" stroke-linecap="round"/>
+<rect x="362" y="92" width="76" height="22" rx="6" fill="#1B1B1F"/>
+<circle cx="232" cy="208" r="8" fill="#1B1B1F"/><circle cx="568" cy="208" r="8" fill="#1B1B1F"/>
+</svg>

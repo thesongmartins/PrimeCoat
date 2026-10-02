@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800" width="800" height="800" role="img"><title>Anti-Rust Metal Enamel 1 L</title>
+<defs>
+  <linearGradient id="metal" x1="0" x2="1">
+    <stop offset="0" stop-color="#B9B4AC"/>
+    <stop offset="0.2" stop-color="#ECE9E3"/>
+    <stop offset="0.55" stop-color="#D9D5CE"/>
+    <stop offset="1" stop-color="#B9B4AC"/>
+  </linearGradient>
+  <radialGradient id="floor" cx="0.5" cy="0.5" r="0.5">
+    <stop offset="0" stop-color="#1B1B1F" stop-opacity="0.18"/>
+    <stop offset="1" stop-color="#1B1B1F" stop-opacity="0"/>
+  </radialGradient>
+</defs>
+<rect width="800" height="800" fill="#F3EFE8"/>
+<ellipse cx="400" cy="690" rx="260" ry="40" fill="url(#floor)"/>
+
+<rect x="290" y="290" width="220" height="350" fill="url(#metal)"/>
+<ellipse cx="400" cy="640" rx="110" ry="20" fill="#B9B4AC"/>
+<rect x="290" y="290" width="220" height="330" fill="url(#metal)"/>
+
+<rect x="300" y="340" width="200" height="250" fill="#45484D" stroke="rgba(0,0,0,0.15)" stroke-width="1.5"/>
+<text x="400" y="378" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="13" letter-spacing="4" font-weight="700" fill="#F2C4B3">PRIMECOAT</text>
+<line x1="378" y1="390" x2="422" y2="390" stroke="#F2C4B3" stroke-width="1.5"/>
+<text x="400" y="430" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="20" fill="#FAF8F5">Anti-Rust Metal</text><text x="400" y="454" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="20" fill="#FAF8F5">Enamel</text>
+<text x="400" y="494" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="14" fill="rgba(250,248,245,0.78)">Graphite · Satin</text>
+<text x="400" y="568" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="18" font-weight="700" fill="#FAF8F5">1 L</text>
+<ellipse cx="400" cy="290" rx="110" ry="20" fill="#B9B4AC"/>
+<ellipse cx="400" cy="287" rx="102" ry="16" fill="#45484D" stroke="#B9B4AC" stroke-width="2"/>
+<rect x="378" y="260" width="44" height="18" rx="3" fill="#B9B4AC"/>
+<rect x="384" y="246" width="32" height="16" rx="3" fill="#1B1B1F"/>
+</svg>
