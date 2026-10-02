@@ -7,7 +7,7 @@ import { ButtonLink } from "@/components/ui/button";
 import { ProductGrid } from "@/components/shop/product-grid";
 import { Filters, ActiveFilterChips } from "@/components/shop/filters";
 import { SortSelect } from "@/components/shop/sort-select";
-import { getPriceBounds, getProducts, parseProductFilters } from "@/lib/products/queries";
+import { getCategoryCounts, getPriceBounds, getProducts, parseProductFilters } from "@/lib/products/queries";
 import { CATEGORY_LABELS } from "@/types/product";
 
 export const metadata: Metadata = {
@@ -18,15 +18,11 @@ export const metadata: Metadata = {
 export default async function ShopPage(props: PageProps<"/shop">) {
   const searchParams = await props.searchParams;
   const filters = parseProductFilters(searchParams);
-  const [products, allProducts, priceBounds] = await Promise.all([
+  const [products, counts, priceBounds] = await Promise.all([
     getProducts(filters),
-    getProducts({}),
+    getCategoryCounts(),
     getPriceBounds(),
   ]);
-  const counts = allProducts.reduce<Record<string, number>>((acc, p) => {
-    acc[p.category] = (acc[p.category] ?? 0) + 1;
-    return acc;
-  }, {});
 
   const title = filters.category ? CATEGORY_LABELS[filters.category] : filters.query ? `Results for “${filters.query}”` : "All products";
 

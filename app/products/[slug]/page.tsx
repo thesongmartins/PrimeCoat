@@ -12,6 +12,10 @@ import { ProductPurchasePanel } from "@/components/shop/product-purchase-panel";
 import { getProductBySlug, getProducts, getRelatedProducts } from "@/lib/products/queries";
 import { CATEGORY_LABELS } from "@/types/product";
 
+// Revalidate catalogue pages every 10 minutes; unknown slugs are rendered on demand.
+export const revalidate = 600;
+export const dynamicParams = true;
+
 export async function generateStaticParams() {
   const products = await getProducts({});
   return products.map((p) => ({ slug: p.slug }));

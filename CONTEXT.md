@@ -11,14 +11,47 @@ This file is the hand-off between development sessions. Update it at the end of 
 | Planning docs (PRD, AGENTS, README, CONTEXT) | ✅ Complete |
 | Next.js scaffold | ✅ Next 16.3 · TS strict · Tailwind v4 · pnpm |
 | UI (homepage, shop, product, services, projects, cart, checkout, account, orders) | ✅ Complete against static catalogue; verified at 375 px and 1440 px |
-| Supabase Auth + Google OAuth | 🟡 Code complete, **untested** — needs Supabase project + Google client from the user |
-| Database migrations + RLS + seed | ⬜ Not started |
-| Cart + checkout + `create_order` | ⬜ Not started |
-| Orders + account pages wired to DB | ⬜ Not started |
+| Supabase Auth + Google OAuth | ✅ Verified against the live project (see Session 4) |
+| Database migrations + RLS + seed | 🟡 SQL written, **not applied** — needs `SUPABASE_DB_URL` |
+| Cart + checkout + `create_order` | 🟡 Code written, untested until migrations apply |
+| Orders + account pages wired to DB | 🟡 Code written, untested until migrations apply |
 | Mailgun confirmation email | ⬜ Not started (needs user config) |
 | Tests | ⬜ Not started |
 | Vercel deployment | ⬜ Not started (needs user config) |
 | Production E2E | ⬜ Not started |
+
+---
+
+## Session 4 — 2 October 2026 — Phase 3 verified; Phases 4–6 code written
+
+### Verified (live Supabase project `ddvpwizhnsorvqpizgog`, `.env.local` populated by the user)
+- `/login` → **Continue with Google** navigates to accounts.google.com; Supabase's authorize hop sends `redirect_uri=https://<ref>.supabase.co/auth/v1/callback` with a client_id and `email profile` scope.
+- With a real Supabase session (throwaway email/password user created via the admin API, cookies encoded exactly as `@supabase/ssr` does): `/account` shows the profile, `/orders` renders, `/checkout` pre-fills and locks the account email, `/login` bounces to `/account`, **Sign out** redirects home, and `/orders` then redirects to `/login?next=%2Forders`. Test user deleted afterwards. Script: scratchpad `auth-test.mjs` (not committed).
+- Not yet exercised by a human: the Google consent screen itself and browser-restart persistence. Both are standard Supabase behaviour; the user should do one real Google sign-in to confirm their test-user list.
+
+### Written this session (untested — database not yet migrated)
+- `supabase/migrations/20261002120000_initial_schema.sql`: enums, `profiles` (+ `handle_new_user` trigger on insert/update of `auth.users`), `products`, `orders`, `order_items`, `order_number_counters`, `painting_service_requests`, indexes, RLS on every table with the policies from PRD §8.
+- `supabase/migrations/20261002120100_order_functions.sql`: `calculate_delivery_fee`, `generate_order_number` (daily counter, Africa/Lagos), `create_order(p_customer, p_items)` — SECURITY DEFINER, requires `auth.uid()`, aggregates duplicate lines, locks products `FOR UPDATE`, validates stock, prices from `products`, forces the order email to `auth.jwt()->>'email'`, inserts order + items atomically, returns the order with items. Execute granted to `authenticated` only.
+- `supabase/seed.sql` generated from `lib/products/seed-data.ts` (`pnpm seed:sql`); `scripts/seed.ts` upserts the same data via service role (`pnpm db:seed`).
+- `scripts/db.ts`: `pnpm db:push` / `pnpm db:types` through `pnpm dlx supabase --db-url` (no CLI login needed).
+- Data layer switched to Supabase: `lib/supabase/public.ts` (anon, cookie-less, for catalogue), `lib/supabase/admin.ts` (service role), `lib/products/{filters,mappers,queries}.ts` (Zod-validated rows), `lib/orders/{mappers,queries,create-order,mark-email-status}.ts`.
+- `POST /api/orders` (401 → 400 → RPC → email after commit → status recorded → 201) and `POST /api/service-requests`.
+- `/checkout/confirmation/[orderNumber]` now loads the real order (RLS-scoped, 404 for foreign orders) and renders the full receipt.
+- `lib/mailgun/send-order-confirmation.ts` is a deliberate stub that **throws**, so orders record `confirmation_email_status = 'failed'` until Phase 7 — nothing pretends to send.
+- Homepage and product pages use ISR (`revalidate = 600`).
+
+### Known state
+- Because `lib/products/queries.ts` now reads from Supabase and the tables do not exist yet, `/`, `/shop` and product pages render the error boundary until `pnpm db:push && pnpm db:seed` run. This is expected.
+
+### Environment variables still required from the user
+- `SUPABASE_DB_URL` (Session pooler URI with password) — to apply migrations and generate types.
+- `MAILGUN_API_KEY`, `MAILGUN_DOMAIN`, `MAILGUN_FROM_EMAIL` (+ optional `MAILGUN_API_BASE_URL`, `MAILGUN_REPLY_TO`) — Phase 7.
+- `NEXT_PUBLIC_SITE_URL` — set to `http://localhost:3000` locally (defaults to that if absent).
+
+### Next recommended task
+1. `pnpm db:push` → `pnpm db:seed` → `pnpm db:types`; confirm tables, policies and 32 products in Supabase Studio.
+2. Run the full checkout with a real session; confirm one `orders` row + `order_items`, totals match `calculate_delivery_fee`, `/orders` and `/orders/[id]` show it, a second user gets 404.
+3. Phase 7 Mailgun.
 
 ---
 

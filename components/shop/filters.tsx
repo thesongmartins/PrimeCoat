@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { SlidersHorizontal, X } from "lucide-react";
-import type { ProductFilters } from "@/lib/products/queries";
+import type { ProductFilters } from "@/lib/products/filters";
 import { CATEGORY_LABELS, PRODUCT_CATEGORIES } from "@/types/product";
 import { Input, Label } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
