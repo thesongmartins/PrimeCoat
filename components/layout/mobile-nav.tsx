@@ -2,10 +2,10 @@
 
 import { useEffect, useState, Suspense } from "react";
 import { createPortal } from "react-dom";
-import { LogOut, Menu, Package, User, X } from "lucide-react";
+import { Menu, Package, User, X } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { signOut } from "@/app/auth/actions";
+import { SignOutButton } from "@/components/auth/sign-out-button";
 import { usePathname } from "next/navigation";
 import { Logo } from "./logo";
 import { NAV_LINKS } from "./nav-links";
@@ -100,11 +100,11 @@ export function MobileNav({ user }: { user: MobileNavUser | null }) {
                       <Package className="size-4" aria-hidden="true" /> Orders
                     </ButtonLink>
                   </div>
-                  <form action={signOut} className="mt-3">
-                    <button type="submit" className="flex h-11 w-full items-center justify-center gap-2 rounded-md text-sm font-medium text-charcoal-600 hover:bg-stone-200">
-                      <LogOut className="size-4" aria-hidden="true" /> Sign out
-                    </button>
-                  </form>
+                  <SignOutButton
+                    unstyled
+                    className="mt-3 flex h-11 w-full items-center justify-center gap-2 rounded-md text-sm font-medium text-charcoal-600 hover:bg-stone-200 disabled:opacity-50"
+                    onDone={() => setOpen(false)}
+                  />
                 </>
               ) : (
                 <>
