@@ -2,7 +2,10 @@
 
 import { useEffect, useState, Suspense } from "react";
 import { createPortal } from "react-dom";
-import { Menu, X } from "lucide-react";
+import { LogOut, Menu, Package, User, X } from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
+import { signOut } from "@/app/auth/actions";
 import { usePathname } from "next/navigation";
 import { Logo } from "./logo";
 import { NAV_LINKS } from "./nav-links";
@@ -10,7 +13,13 @@ import { NavLink } from "./nav-link";
 import { SearchForm } from "./search-form";
 import { ButtonLink } from "@/components/ui/button";
 
-export function MobileNav() {
+export interface MobileNavUser {
+  name: string | null;
+  email: string;
+  avatarUrl: string | null;
+}
+
+export function MobileNav({ user }: { user: MobileNavUser | null }) {
   const pathname = usePathname();
   // Store the pathname the menu was opened on; a route change closes it without an effect.
   const [openedAt, setOpenedAt] = useState<string | null>(null);
@@ -67,13 +76,50 @@ export function MobileNav() {
                 ))}
               </ul>
             </nav>
-            <div className="mt-8 grid grid-cols-2 gap-3">
-              <ButtonLink href="/account" variant="outline" onClick={() => setOpen(false)}>
-                Account
-              </ButtonLink>
-              <ButtonLink href="/orders" variant="outline" onClick={() => setOpen(false)}>
-                Orders
-              </ButtonLink>
+            <div className="mt-8 border-t border-stone pt-6">
+              {user ? (
+                <>
+                  <div className="flex items-center gap-3">
+                    {user.avatarUrl ? (
+                      <Image src={user.avatarUrl} alt="" width={40} height={40} className="size-10 rounded-full ring-1 ring-black/10" referrerPolicy="no-referrer" />
+                    ) : (
+                      <span className="grid size-10 place-items-center rounded-full bg-charcoal text-sm font-semibold text-warm-white">
+                        {(user.name ?? user.email).charAt(0).toUpperCase()}
+                      </span>
+                    )}
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium">{user.name ?? "PrimeCoat customer"}</p>
+                      <p className="truncate text-xs text-mute">{user.email}</p>
+                    </div>
+                  </div>
+                  <div className="mt-4 grid grid-cols-2 gap-3">
+                    <ButtonLink href="/account" variant="outline" onClick={() => setOpen(false)}>
+                      <User className="size-4" aria-hidden="true" /> Account
+                    </ButtonLink>
+                    <ButtonLink href="/orders" variant="outline" onClick={() => setOpen(false)}>
+                      <Package className="size-4" aria-hidden="true" /> Orders
+                    </ButtonLink>
+                  </div>
+                  <form action={signOut} className="mt-3">
+                    <button type="submit" className="flex h-11 w-full items-center justify-center gap-2 rounded-md text-sm font-medium text-charcoal-600 hover:bg-stone-200">
+                      <LogOut className="size-4" aria-hidden="true" /> Sign out
+                    </button>
+                  </form>
+                </>
+              ) : (
+                <>
+                  <ButtonLink href="/login" size="lg" className="w-full" onClick={() => setOpen(false)}>
+                    <User className="size-5" aria-hidden="true" /> Sign in
+                  </ButtonLink>
+                  <p className="mt-3 text-center text-xs leading-relaxed text-mute">
+                    Sign in with Google to check out and see your{" "}
+                    <Link href="/orders" className="underline underline-offset-2" onClick={() => setOpen(false)}>
+                      order history
+                    </Link>
+                    .
+                  </p>
+                </>
+              )}
             </div>
           </div>
           <div className="border-t border-stone px-4 py-4 text-center text-xs text-mute sm:px-6">

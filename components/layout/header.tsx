@@ -7,8 +7,11 @@ import { NavLink } from "./nav-link";
 import { MobileNav } from "./mobile-nav";
 import { SearchForm } from "./search-form";
 import { AccountMenu } from "./account-menu";
+import { getCurrentUser } from "@/lib/auth/session";
 
-export function Header() {
+export async function Header() {
+  const user = await getCurrentUser();
+  const navUser = user ? { name: user.fullName, email: user.email, avatarUrl: user.avatarUrl } : null;
   return (
     <header className="sticky top-0 z-40 border-b border-stone bg-warm-white/95 backdrop-blur supports-[backdrop-filter]:bg-warm-white/85">
       <a
@@ -19,7 +22,7 @@ export function Header() {
       </a>
       <Container className="flex h-16 items-center gap-2 sm:gap-4">
         <div className="flex items-center gap-1 lg:hidden">
-          <MobileNav />
+          <MobileNav user={navUser} />
         </div>
         <Logo className="min-w-0 lg:mr-6" />
         <nav aria-label="Primary" className="hidden lg:block">
