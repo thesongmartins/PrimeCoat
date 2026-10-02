@@ -7,6 +7,7 @@
  * database password filled in. Keep it in .env.local only.
  */
 import { spawnSync } from "node:child_process";
+import { writeFileSync } from "node:fs";
 import { loadEnv, need } from "./env";
 
 loadEnv();
@@ -26,7 +27,6 @@ if (task === "push") {
   run(["db", "push", "--db-url", dbUrl, "--include-all"]);
 } else if (task === "types") {
   const out = run(["gen", "types", "typescript", "--db-url", dbUrl, "--schema", "public"], { stdoutToFile: "lib/supabase/database.types.ts" });
-  const { writeFileSync } = await import("node:fs");
   writeFileSync("lib/supabase/database.types.ts", out);
   console.log("Wrote lib/supabase/database.types.ts");
 } else {
