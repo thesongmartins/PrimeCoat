@@ -184,7 +184,10 @@ Rules:
 - Orders are inserted **only** via `create_order()`. Do not add a client-side `insert` policy on `orders` or `order_items`.
 - `create_order()` is `SECURITY DEFINER` with `set search_path = public` and must `raise exception` if `auth.uid()` is null.
 - Reads of a user's own orders go through the user's session so RLS filters them; never filter by `user_id` manually with the admin client as a substitute for RLS.
-- Keep `lib/supabase/database.types.ts` in sync with migrations.
+- Keep `lib/supabase/database.types.ts` in sync with migrations (`pnpm db:types`).
+- Supabase's API roles run with **safeupdate**: `DELETE`/`UPDATE` without `WHERE` fails inside SECURITY DEFINER functions too. Avoid temp tables in PL/pgSQL (plan-cache + pooling issues); accumulate in `jsonb` and use `jsonb_to_recordset` (see migration `20261002130000`).
+- PostgREST inserts that ask for the row back (`.select()` / `Prefer: return=representation`) need a SELECT policy. Anonymous service-request inserts therefore use `return=minimal` (plain `.insert()` without `.select()`).
+- Query layers (`lib/*/queries.ts`, `mappers.ts`) validate rows with Zod before mapping snake_case → camelCase.
 
 ---
 
@@ -219,6 +222,7 @@ Rules:
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | public | Supabase anon / publishable key (RLS applies) |
 | `NEXT_PUBLIC_SITE_URL` | public | Canonical origin, used for OAuth `redirectTo` and email links |
 | `SUPABASE_SERVICE_ROLE_KEY` | server only | Seeding + email-status update |
+| `SUPABASE_DB_URL` | scripts only | Postgres URI for `pnpm db:push` / `pnpm db:types`. Never read by the app. |
 | `MAILGUN_API_KEY` | server only | Mailgun private API key |
 | `MAILGUN_DOMAIN` | server only | Sending domain (sandbox or verified) |
 | `MAILGUN_FROM_EMAIL` | server only | e.g. `PrimeCoat <orders@mg.primecoat.ng>` |

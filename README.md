@@ -127,7 +127,8 @@ Copy `.env.example` to `.env.local`. Never commit `.env.local`.
 | `NEXT_PUBLIC_SUPABASE_URL` | browser + server | yes | Supabase → Project Settings → API → Project URL |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | browser + server | yes | Supabase → Project Settings → API → `anon` `public` key |
 | `NEXT_PUBLIC_SITE_URL` | browser + server | yes | `http://localhost:3000` locally; production URL on Vercel |
-| `SUPABASE_SERVICE_ROLE_KEY` | server scripts only | for seeding | Supabase → Project Settings → API → `service_role` key. **Secret.** |
+| `SUPABASE_SERVICE_ROLE_KEY` | server only | yes | Supabase → Project Settings → API → `service_role` key. Used by seed/verification scripts and to record the email status on an order. **Secret.** |
+| `SUPABASE_DB_URL` | scripts only | for migrations | Supabase → **Connect** → *Session pooler* URI (port 5432) with your database password filled in. Used by `pnpm db:push` and `pnpm db:types`. **Secret.** |
 | `MAILGUN_API_KEY` | server only | yes | Mailgun → Account → API Security → Private API key. **Secret.** |
 | `MAILGUN_DOMAIN` | server only | yes | e.g. `sandboxXXXX.mailgun.org` or `mg.yourdomain.com` |
 | `MAILGUN_FROM_EMAIL` | server only | yes | e.g. `PrimeCoat <orders@sandboxXXXX.mailgun.org>` |
@@ -199,21 +200,25 @@ If you see `redirect_uri_mismatch`, the Supabase callback URL in step 3 is wrong
    ```
 6. **Verify:** `pnpm mailgun:test your@email.com` sends a test message. Then place a real order and check the inbox. Mailgun → **Sending → Logs** shows *Accepted* / *Delivered* events.
 
+If you see `403 … add the address to your authorized recipients`, the credentials are correct but the recipient is not on the sandbox domain's **Authorized Recipients** list. Add the exact address (the Google account email you sign in with) and confirm Mailgun's verification email. Orders placed before that still save correctly; they are marked `confirmation_email_status = 'failed'` with the reason in `confirmation_email_error`.
+
 ---
 
 ## Database setup
 
 Migrations live in `supabase/migrations/` and the product seed in `supabase/seed.sql`.
 
-**Option A — Supabase CLI (recommended)**
+**Option A — scripts (recommended, no CLI login needed)**
+
+Set `SUPABASE_DB_URL` in `.env.local` (see the environment table), then:
 
 ```bash
-pnpm dlx supabase login
-pnpm dlx supabase link --project-ref <project-ref>
-pnpm db:push            # applies all migrations
-pnpm db:seed            # loads products
-pnpm supabase:types     # regenerates lib/supabase/database.types.ts
+pnpm db:push            # applies supabase/migrations/* via the Supabase CLI in --db-url mode
+pnpm db:seed            # upserts the 32-product catalogue with the service role
+pnpm db:types           # regenerates lib/supabase/database.types.ts from the live schema
 ```
+
+If the first `db:push` reports *Connection timed out*, run it again — the first invocation downloads the CLI and can exceed the connection window.
 
 **Option B — SQL editor**
 
@@ -234,9 +239,11 @@ Supabase → **SQL Editor** → paste each file in `supabase/migrations/` in fil
 | `pnpm typecheck` | `tsc --noEmit` |
 | `pnpm test` | Vitest (unit + handler tests) |
 | `pnpm test:watch` | Vitest watch mode |
-| `pnpm db:push` | Apply migrations to the linked Supabase project |
-| `pnpm db:seed` | Load `supabase/seed.sql` |
-| `pnpm supabase:types` | Generate `lib/supabase/database.types.ts` |
+| `pnpm db:push` | Apply migrations (`SUPABASE_DB_URL`) |
+| `pnpm db:seed` | Upsert the product catalogue (service role) |
+| `pnpm db:types` | Generate `lib/supabase/database.types.ts` |
+| `pnpm seed:sql` | Regenerate `supabase/seed.sql` from `lib/products/seed-data.ts` |
+| `pnpm images:generate` | Regenerate product SVG renders |
 | `pnpm mailgun:test <email>` | Send a test email through Mailgun |
 | `pnpm verify:rls` | Script that confirms one user cannot read another's orders |
 | `pnpm check:secrets` | Grep the tree for accidentally committed keys |

@@ -12,13 +12,46 @@ This file is the hand-off between development sessions. Update it at the end of 
 | Next.js scaffold | ✅ Next 16.3 · TS strict · Tailwind v4 · pnpm |
 | UI (homepage, shop, product, services, projects, cart, checkout, account, orders) | ✅ Complete against static catalogue; verified at 375 px and 1440 px |
 | Supabase Auth + Google OAuth | ✅ Verified against the live project (see Session 4) |
-| Database migrations + RLS + seed | 🟡 SQL written, **not applied** — needs `SUPABASE_DB_URL` |
-| Cart + checkout + `create_order` | 🟡 Code written, untested until migrations apply |
-| Orders + account pages wired to DB | 🟡 Code written, untested until migrations apply |
-| Mailgun confirmation email | ⬜ Not started (needs user config) |
-| Tests | ⬜ Not started |
+| Database migrations + RLS + seed | ✅ Applied to the live project; 32 products seeded; RLS verified |
+| Cart + checkout + `create_order` | ✅ Verified end to end against the live database |
+| Orders + account pages wired to DB | ✅ Verified (owner sees, other user gets 404) |
+| Mailgun confirmation email | 🟡 Implemented; API accepts credentials; **sandbox rejects recipients not on the Authorized list** |
+| Tests | ✅ 105 Vitest tests passing |
 | Vercel deployment | ⬜ Not started (needs user config) |
 | Production E2E | ⬜ Not started |
+
+---
+
+## Session 5 — 2 October 2026 — Phases 4–8 applied and verified
+
+### Database (live project)
+- Applied `20261002120000_initial_schema.sql`, `20261002120100_order_functions.sql`, `20261002130000_create_order_jsonb_lines.sql` with `pnpm db:push` (Supabase CLI `--db-url`, session pooler `aws-1-eu-west-3`). First attempt timed out while the CLI downloaded; the retry succeeded.
+- Seeded 32 products (`pnpm db:seed`). Generated `lib/supabase/database.types.ts` (`pnpm db:types`).
+- **Bug found and fixed:** the original `create_order()` used a temp table with `DELETE FROM tmp…` — rejected by Supabase's safeupdate guard (`21000 DELETE requires a WHERE clause`). Rewritten to accumulate lines in `jsonb` (migration 3).
+- RLS probe as `anon`: products readable (32), orders/profiles/counters return `[]`, product insert 401, `create_order` 401 (`42501`), service-request insert 201 with `return=minimal`, select of requests `[]`. `calculate_delivery_fee` returns 2500/4000/5000/7500/0 as specified.
+
+### End-to-end order flow (Playwright, two throwaway users, cleaned up afterwards)
+- Profile row created by trigger. Shop renders 32 cards from the DB. Add 2× Sage Grove + 1× roller → cart shows 3 items / ₦42,600 → checkout (email locked) → **Place Order** → `/checkout/confirmation/PC-20261002-0001` with full receipt → cart cleared.
+- Stored row: `subtotal 42600, delivery_fee 2500, total 45100`, two `order_items` with name/price snapshots, email = account email, `confirmation_email_status = 'failed'` with the Mailgun 403 reason recorded.
+- `/orders` lists it; `/orders/[id]` shows it; a fresh session for the same user still sees it (persistence).
+- User B: 404 on A's `/orders/[id]` and confirmation page, empty list, zero rows via REST with B's JWT. Anonymous → redirected to `/login?next=…`.
+- API probes: over-stock 409 `INSUFFICIENT_STOCK` ("Only 3 of Professional Brush Set…"), out-of-stock 409, unknown product 409 `PRODUCT_UNAVAILABLE`, client `price` field ignored and duplicate lines merged (3 × ₦2,400 stored), empty cart 400, no session 401.
+
+### Mailgun (Phase 7)
+- Implemented `lib/mailgun/client.ts` (fetch + Basic auth, 15 s timeout, tags/variables), `templates/order-confirmation.ts` (table layout, escaped, HTML + text), `send-order-confirmation.ts`, `scripts/mailgun-test.ts`.
+- `pnpm mailgun:test techdev2@tehcoop.com` → **403**: *"Free accounts are for test purposes only. Please upgrade or add the address to your authorized recipients."* Credentials and domain are therefore valid; the recipient is simply not authorised yet. **User action:** add the Google account email they will order with to Mailgun → Sending → Domains → sandbox → Authorized Recipients, confirm the verification email, then re-run the test and place a real order.
+
+### Tests (Phase 8)
+- Vitest configured (`vitest.config.ts`, `server-only` aliased to a no-op for tests). 105 tests: cart calculations incl. the delivery-fee matrix, checkout/cart/service-request schemas, email template (content, escaping, text part), currency/redirect/protected-path/filter parsing, order and product mappers, `create_order` error mapping, and `POST /api/orders` behaviour (401, 400, account-email override, email-failure still 201, 409 mapping, 500).
+
+### Not yet done
+- Human Google sign-in on the real consent screen (user).
+- Real email delivery (blocked on authorised recipient).
+- Phase 9 Vercel deployment and Phase 10 production E2E.
+
+### Next recommended task
+1. User adds the authorised recipient; re-run `pnpm mailgun:test <that email>`; then sign in with Google and place a real order; confirm the email arrives and `confirmation_email_status = 'sent'`.
+2. Phase 9: create the Vercel project, set env vars, add production redirect URLs in Supabase and the production origin in Google Cloud, redeploy, run the acceptance test on production.
 
 ---
 
