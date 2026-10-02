@@ -14,13 +14,12 @@ export async function AccountMenu({ className }: { className?: string }) {
       <Link
         href="/login"
         className={cn(
-          "grid size-10 place-items-center rounded-md text-charcoal transition-colors hover:bg-stone-200 sm:w-auto sm:gap-2 sm:px-3",
+          "flex h-10 items-center gap-1.5 rounded-md px-2 text-charcoal transition-colors hover:bg-stone-200 sm:gap-2 sm:px-3",
           className,
         )}
-        aria-label="Sign in"
       >
         <User className="size-5" aria-hidden="true" />
-        <span className="hidden text-sm font-medium sm:inline">Sign in</span>
+        <span className="whitespace-nowrap text-[0.8125rem] font-medium sm:text-sm">Sign in</span>
       </Link>
     );
   }

@@ -25,7 +25,7 @@ export function Footer() {
   return (
     <footer className="mt-24 bg-charcoal text-stone">
       <Container className="grid gap-12 py-16 md:grid-cols-12">
-        <div className="md:col-span-4">
+        <div className="md:col-span-12 lg:col-span-4">
           <Logo inverse />
           <p className="mt-5 max-w-xs text-sm leading-relaxed text-stone-400">
             Quality Paints. Professional Finishes. Premium paints and professional painting services for homes and businesses across Nigeria.
@@ -41,12 +41,12 @@ export function Footer() {
         <FooterColumn title="Shop" links={SHOP_LINKS} />
         <FooterColumn title="Company" links={COMPANY_LINKS} />
         <FooterColumn title="Account" links={ACCOUNT_LINKS} />
-        <div className="md:col-span-2">
+        <div className="md:col-span-3 lg:col-span-2">
           <h2 className="text-xs font-semibold uppercase tracking-[0.16em] text-warm-white">Opening hours</h2>
           <dl className="mt-4 space-y-2 text-sm text-stone-400">
-            <div className="flex justify-between gap-4"><dt>Mon – Fri</dt><dd>8am – 6pm</dd></div>
-            <div className="flex justify-between gap-4"><dt>Saturday</dt><dd>9am – 4pm</dd></div>
-            <div className="flex justify-between gap-4"><dt>Sunday</dt><dd>Closed</dd></div>
+            <div className="flex justify-between gap-4 whitespace-nowrap"><dt>Mon – Fri</dt><dd>8am – 6pm</dd></div>
+            <div className="flex justify-between gap-4 whitespace-nowrap"><dt>Saturday</dt><dd>9am – 4pm</dd></div>
+            <div className="flex justify-between gap-4 whitespace-nowrap"><dt>Sunday</dt><dd>Closed</dd></div>
           </dl>
         </div>
       </Container>
@@ -62,7 +62,7 @@ export function Footer() {
 
 function FooterColumn({ title, links }: { title: string; links: ReadonlyArray<{ href: string; label: string }> }) {
   return (
-    <div className="md:col-span-2">
+    <div className="md:col-span-3 lg:col-span-2">
       <h2 className="text-xs font-semibold uppercase tracking-[0.16em] text-warm-white">{title}</h2>
       <ul className="mt-4 space-y-2.5">
         {links.map((l) => (
