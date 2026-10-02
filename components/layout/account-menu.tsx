@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { Package, User, LogIn } from "lucide-react";
+import { Package, User, LogOut } from "lucide-react";
 import { getCurrentUser } from "@/lib/auth/session";
 import { signOut } from "@/app/auth/actions";
 import { cn } from "@/lib/utils/cn";
@@ -13,11 +13,13 @@ export async function AccountMenu({ className }: { className?: string }) {
     return (
       <Link
         href="/login"
-        className={cn("grid size-10 place-items-center rounded-md text-charcoal transition-colors hover:bg-stone-200 sm:w-auto sm:gap-2 sm:px-3", className)}
+        className={cn(
+          "grid size-10 place-items-center rounded-md text-charcoal transition-colors hover:bg-stone-200 sm:w-auto sm:gap-2 sm:px-3",
+          className,
+        )}
         aria-label="Sign in"
       >
-        <LogIn className="size-5 sm:hidden" aria-hidden="true" />
-        <User className="hidden size-5 sm:block" aria-hidden="true" />
+        <User className="size-5" aria-hidden="true" />
         <span className="hidden text-sm font-medium sm:inline">Sign in</span>
       </Link>
     );
@@ -32,27 +34,48 @@ export async function AccountMenu({ className }: { className?: string }) {
         aria-label={`Account menu for ${user.fullName ?? user.email}`}
       >
         {user.avatarUrl ? (
-          <Image src={user.avatarUrl} alt="" width={32} height={32} className="size-8 rounded-full ring-1 ring-black/10" referrerPolicy="no-referrer" />
+          <Image
+            src={user.avatarUrl}
+            alt=""
+            width={32}
+            height={32}
+            className="size-8 rounded-full ring-1 ring-black/10"
+            referrerPolicy="no-referrer"
+          />
         ) : (
-          <span className="grid size-8 place-items-center rounded-full bg-charcoal text-sm font-semibold text-warm-white">{initial}</span>
+          <span className="grid size-8 place-items-center rounded-full bg-charcoal text-sm font-semibold text-warm-white">
+            {initial}
+          </span>
         )}
       </summary>
       <div className="absolute right-0 top-full z-50 mt-2 w-64 rounded-lg border border-stone bg-white p-2 shadow-lift">
         <div className="px-3 py-2">
-          <p className="truncate text-sm font-medium">{user.fullName ?? "PrimeCoat customer"}</p>
+          <p className="truncate text-sm font-medium">
+            {user.fullName ?? "PrimeCoat customer"}
+          </p>
           <p className="truncate text-xs text-mute">{user.email}</p>
         </div>
         <div className="my-1 border-t border-stone" />
-        <Link href="/account" className="flex items-center gap-2.5 rounded-md px-3 py-2 text-sm hover:bg-stone-200">
+        <Link
+          href="/account"
+          className="flex items-center gap-2.5 rounded-md px-3 py-2 text-sm hover:bg-stone-200"
+        >
           <User className="size-4 text-mute" aria-hidden="true" /> My account
         </Link>
-        <Link href="/orders" className="flex items-center gap-2.5 rounded-md px-3 py-2 text-sm hover:bg-stone-200">
+        <Link
+          href="/orders"
+          className="flex items-center gap-2.5 rounded-md px-3 py-2 text-sm hover:bg-stone-200"
+        >
           <Package className="size-4 text-mute" aria-hidden="true" /> Orders
         </Link>
         <div className="my-1 border-t border-stone" />
         <form action={signOut}>
-          <button type="submit" className="flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-left text-sm hover:bg-stone-200">
-            <LogIn className="size-4 rotate-180 text-mute" aria-hidden="true" /> Sign out
+          <button
+            type="submit"
+            className="flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-left text-sm hover:bg-stone-200"
+          >
+            <LogOut className="size-4 text-mute" aria-hidden="true" />
+            Sign out
           </button>
         </form>
       </div>
