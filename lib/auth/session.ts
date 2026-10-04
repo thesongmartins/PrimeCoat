@@ -9,6 +9,8 @@ export interface CurrentUser {
   fullName: string | null;
   avatarUrl: string | null;
   createdAt: string;
+  /** "google" or "email" */
+  provider: string;
 }
 
 /**
@@ -31,5 +33,6 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
     fullName: str(meta.full_name) ?? str(meta.name),
     avatarUrl: str(meta.avatar_url) ?? str(meta.picture),
     createdAt: user.created_at,
+    provider: typeof user.app_metadata?.provider === "string" ? user.app_metadata.provider : "email",
   };
 });

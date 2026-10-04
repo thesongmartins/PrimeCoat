@@ -54,7 +54,7 @@ export default async function AccountPage() {
           </div>
         </div>
         <dl className="mt-6 grid gap-4 border-t border-stone pt-5 text-sm sm:grid-cols-3">
-          <div><dt className="text-mute">Signed in with</dt><dd className="mt-0.5 font-medium">Google</dd></div>
+          <div><dt className="text-mute">Signed in with</dt><dd className="mt-0.5 font-medium">{user.provider === "google" ? "Google" : "Email and password"}</dd></div>
           <div><dt className="text-mute">Member since</dt><dd className="mt-0.5 font-medium">{formatDate(user.createdAt)}</dd></div>
           <div><dt className="text-mute">Order confirmations go to</dt><dd className="mt-0.5 truncate font-medium">{user.email}</dd></div>
         </dl>

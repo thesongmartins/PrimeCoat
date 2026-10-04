@@ -22,6 +22,22 @@ This file is the hand-off between development sessions. Update it at the end of 
 
 ---
 
+## Session 8 — 4 October 2026 — Email and password accounts
+
+### Added
+- `/signup` (name, email, password + confirm, show/hide), email form on `/login` under Google, `/forgot-password`, `/reset-password`, `app/auth/confirm/route.ts` (token-hash link verification).
+- Server actions with Supabase error mapping: invalid credentials, unconfirmed email (with resend), existing account, undeliverable address, unsent email, rate limits. Forgot-password response is identical whether or not the account exists.
+- Proxy bounces signed-in users off `/signup` and `/forgot-password`. Account page shows the sign-in method. Mobile menu has Create account.
+- `lib/validations/auth.ts` + 11 tests (117 total).
+
+### Verified against the live project (local app)
+Unconfirmed sign-in blocked with resend option; confirmation link via `/auth/confirm` signs in; wrong password message; password sign-in honours `?next`; signed-in users bounced from signup/forgot; recovery link → reset page → new password works and old one fails; invalid link shows friendly error; no browser storage. Pages checked at 375 px and 1280 px.
+
+### Constraint found
+Project has **Confirm email ON** and uses Supabase's built-in mailer, which only delivers to Supabase team members and is rate-limited (~2/hour). Supabase also rejects undeliverable domains like example.com at sign-up. Real customers can't confirm until the user configures custom SMTP or turns confirmation off (README → Email and password accounts).
+
+---
+
 ## Session 7 — 4 October 2026 — Cart moved to Supabase (no browser storage)
 
 ### Why

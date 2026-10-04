@@ -50,7 +50,7 @@ export async function updateSession(request: NextRequest): Promise<NextResponse>
     return NextResponse.redirect(url);
   }
 
-  if (user && pathname === "/login") {
+  if (user && (pathname === "/login" || pathname === "/signup" || pathname === "/forgot-password")) {
     const next = request.nextUrl.searchParams.get("next");
     const url = request.nextUrl.clone();
     url.pathname = next && next.startsWith("/") && !next.startsWith("//") ? next.split("?")[0] : "/account";

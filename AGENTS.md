@@ -68,6 +68,7 @@ Key principles:
 3. `app/auth/callback/route.ts` calls `exchangeCodeForSession(code)` and redirects to `next` (sanitised to a same-origin path).
 4. `proxy.ts` (Next 16's replacement for `middleware.ts`) refreshes the session on every matched request and redirects anonymous users away from protected routes to `/login?next=<path>`.
 5. A Postgres trigger on `auth.users` inserts the `profiles` row.
+7. Email/password: `/signup`, `/login` (email form below Google), `/forgot-password`, `/reset-password`. Server actions in `app/auth/actions.ts` (`signInWithPassword`, `signUpWithPassword`, `resendConfirmation`, `requestPasswordReset`, `updatePassword`) validated by `lib/validations/auth.ts`. Email links verify at `app/auth/confirm/route.ts` (`verifyOtp` with `token_hash`). Forgot-password always returns the same response so accounts can't be enumerated.
 6. Sign-out is a server action (`app/auth/actions.ts`) calling `supabase.auth.signOut()` and redirecting home.
 
 ### Checkout flow

@@ -111,8 +111,11 @@ export function MobileNav({ user }: { user: MobileNavUser | null }) {
                   <ButtonLink href="/login" size="lg" className="w-full" onClick={() => setOpen(false)}>
                     <User className="size-5" aria-hidden="true" /> Sign in
                   </ButtonLink>
+                  <ButtonLink href="/signup" variant="outline" size="lg" className="mt-3 w-full" onClick={() => setOpen(false)}>
+                    Create account
+                  </ButtonLink>
                   <p className="mt-3 text-center text-xs leading-relaxed text-mute">
-                    Sign in with Google to check out and see your{" "}
+                    Use Google or your email to check out and see your{" "}
                     <Link href="/orders" className="underline underline-offset-2" onClick={() => setOpen(false)}>
                       order history
                     </Link>

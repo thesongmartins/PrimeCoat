@@ -184,6 +184,24 @@ If you see `redirect_uri_mismatch`, the Supabase callback URL in step 3 is wrong
 
 ---
 
+## Email and password accounts
+
+Customers can sign in with Google **or** create an account with email and password at `/signup`. Sign-in, forgot password (`/forgot-password`) and reset (`/reset-password`) are built in. Email links land on `/auth/confirm` (token-hash verification, works across devices) or `/auth/callback` (PKCE code, same browser).
+
+Configure in the Supabase dashboard:
+
+1. **Authentication → Sign In / Providers → Email:** enabled (default).
+2. **Confirm email.** On the same page. Two choices:
+   - **On** (secure default): new users must click a link before signing in. Requires step 4, otherwise Supabase only delivers to members of your Supabase team.
+   - **Off** (quickest for a demo): sign-up signs the user straight in. The code handles both.
+3. **Authentication → URL Configuration → Redirect URLs:** besides the `/auth/callback` entries, add `http://localhost:3000/auth/confirm` and `https://<prod-domain>/auth/confirm`.
+4. **Custom SMTP** (needed when *Confirm email* is on): **Project Settings → Authentication → SMTP Settings** → enable custom SMTP. With Mailgun use host `smtp.mailgun.org`, port `587`, username and password from Mailgun → your domain → **SMTP credentials**, sender `PrimeCoat <no-reply@your-domain>`. A Mailgun sandbox domain still only delivers to its authorised recipients.
+5. **Email templates** (recommended, so links work when opened on another device): **Authentication → Emails → Templates**.
+   - *Confirm signup*: change the link to `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email&next=/account`
+   - *Reset password*: change the link to `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=recovery`
+
+Verify: create an account at `/signup`, click the email link, confirm you land on `/account` showing "Email and password". Sign out, use **Forgot password?**, follow the link, set a new password, sign in with it.
+
 ## Mailgun setup
 
 1. **Account:** [mailgun.com](https://www.mailgun.com) → sign up (free tier is enough for testing).
