@@ -1,35 +1,27 @@
 "use client";
 
 import Link from "next/link";
+import { useState, useTransition } from "react";
 import { ArrowLeft, ShoppingBag } from "lucide-react";
-import { useCartStore } from "@/lib/cart/store";
+import type { CartItem } from "@/types/cart";
+import { removeFromCart, setCartQuantity, setDeliveryState } from "@/app/cart/actions";
 import { CartLine } from "./cart-line";
 import { CartSummary } from "./cart-summary";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ButtonLink } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils/cn";
 
-export function CartView() {
-  const { items, deliveryState, hasHydrated, setQuantity, removeItem, setDeliveryState } = useCartStore();
+/** Renders the Supabase cart. Every change is a server action; the page re-renders from the database. */
+export function CartView({ items, deliveryState }: { items: CartItem[]; deliveryState: string }) {
+  const [pending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
 
-  if (!hasHydrated) {
-    return (
-      <div className="grid gap-10 lg:grid-cols-12" aria-busy="true" aria-label="Loading cart">
-        <div className="space-y-6 lg:col-span-8">
-          {Array.from({ length: 2 }).map((_, i) => (
-            <div key={i} className="grid grid-cols-[112px_1fr] gap-6">
-              <Skeleton className="aspect-square" />
-              <div className="space-y-3">
-                <Skeleton className="h-5 w-2/3" />
-                <Skeleton className="h-4 w-1/3" />
-                <Skeleton className="h-9 w-32" />
-              </div>
-            </div>
-          ))}
-        </div>
-        <Skeleton className="h-72 lg:col-span-4" />
-      </div>
-    );
+  function run(action: () => Promise<{ ok: boolean; error?: string }>) {
+    setError(null);
+    startTransition(async () => {
+      const res = await action();
+      if (!res.ok) setError(res.error ?? "Something went wrong.");
+    });
   }
 
   if (items.length === 0) {
@@ -38,11 +30,7 @@ export function CartView() {
         icon={<ShoppingBag className="size-10" aria-hidden="true" />}
         title="Your cart is waiting for its first coat of colour."
         description="Browse our interior and exterior emulsions, primers and tools, and add what you need."
-        action={
-          <ButtonLink href="/shop" size="lg">
-            Browse Paints
-          </ButtonLink>
-        }
+        action={<ButtonLink href="/shop" size="lg">Browse Paints</ButtonLink>}
       />
     );
   }
@@ -50,13 +38,16 @@ export function CartView() {
   return (
     <div className="grid gap-10 lg:grid-cols-12">
       <div className="lg:col-span-8">
-        <ul className="divide-y divide-stone border-y border-stone">
+        {error && (
+          <p role="alert" className="mb-4 rounded-md border border-danger/30 bg-danger-100 px-4 py-3 text-sm text-danger">{error}</p>
+        )}
+        <ul className={cn("divide-y divide-stone border-y border-stone transition-opacity", pending && "opacity-60")} aria-busy={pending || undefined}>
           {items.map((item) => (
             <CartLine
               key={item.productId}
               item={item}
-              onQuantityChange={(q) => setQuantity(item.productId, q)}
-              onRemove={() => removeItem(item.productId)}
+              onQuantityChange={(q) => run(() => setCartQuantity(item.productId, q))}
+              onRemove={() => run(() => removeFromCart(item.productId))}
             />
           ))}
         </ul>
@@ -68,8 +59,8 @@ export function CartView() {
       </div>
       <div className="lg:col-span-4">
         <div className="lg:sticky lg:top-24">
-          <CartSummary items={items} deliveryState={deliveryState} onDeliveryStateChange={setDeliveryState}>
-            <ButtonLink href="/checkout" size="lg" className="w-full">
+          <CartSummary items={items} deliveryState={deliveryState} onDeliveryStateChange={(s) => run(() => setDeliveryState(s))}>
+            <ButtonLink href="/checkout" size="lg" className={cn("w-full", pending && "pointer-events-none opacity-60")} aria-disabled={pending || undefined}>
               Proceed to Checkout
             </ButtonLink>
           </CartSummary>

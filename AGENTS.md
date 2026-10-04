@@ -23,7 +23,7 @@ Nothing in the final product may be mocked, faked or stored only in the browser.
 | Styling | Tailwind CSS v4 | Design tokens in `app/globals.css` under `@theme`. |
 | Database / Auth | Supabase (Postgres + Auth) | `@supabase/ssr` for cookie-based sessions. |
 | Validation | Zod | Schemas in `lib/validations/`, shared by client forms and server handlers. |
-| Client state | Zustand with `persist` | Cart only. |
+| Persistence | Supabase only | **Nothing is stored in localStorage, sessionStorage or IndexedDB.** The cart is the `cart_items` table; the only browser-side state is the Supabase session cookie. |
 | Email | Mailgun HTTP API via `fetch` | No SDK; see `lib/mailgun/`. |
 | Testing | Vitest + Testing Library | `pnpm test`. |
 | Package manager | pnpm | Do not commit `package-lock.json` or `yarn.lock`. |
@@ -84,7 +84,7 @@ See `PRD.md` §9. Implementation lives in:
 
 ```
 app/
-  layout.tsx            root layout: fonts, Header, Footer, CartHydration
+  layout.tsx            root layout: fonts, Header, Footer
   page.tsx              homepage
   shop/                 product grid with URL-driven filters (+ loading.tsx)
   products/[slug]/      product detail (+ not-found.tsx)
@@ -109,7 +109,7 @@ components/
   layout/               Header, Footer, Logo, MobileNav (portal), NavLink, SearchForm, AccountMenu
   shop/                 ProductCard, ProductGrid, Filters, SortSelect, CategoryTiles,
                         ProductPurchasePanel, Breadcrumbs
-  cart/                 CartView, CartLine, CartSummary, CartBadge, AddToCartButton, CartHydration
+  cart/                 CartView, CartLine, CartSummary, CartBadge (server count), AddToCartButton (server action)
   checkout/             CheckoutForm, OrderSummary
   orders/               OrderList, OrderDetail, OrderStatusBadge
   account/              AccountShell, AccountNav
@@ -121,7 +121,7 @@ lib/
   mailgun/              send.ts, templates/order-confirmation.ts      [Phase 7]
   orders/               queries.ts (server-only; stubbed until Phase 6)
   products/             seed-data.ts (static catalogue), queries.ts (filter/sort API)
-  cart/                 store.ts (Zustand, persisted), calculations.ts (pure, tested)
+  cart/                 queries.ts (server-only, Supabase), calculations.ts (pure, tested); actions in app/cart/actions.ts
   validations/          checkout.ts, service-request.ts (Zod, shared client/server)
   content/              images.ts, services.ts, projects.ts, service-type.ts
   utils/                cn, format-currency, dates, nigeria-states, slugify, logger, redirects
@@ -236,7 +236,7 @@ Rules:
 ## 11. Testing requirements
 
 - `pnpm test` must pass before any commit that touches `lib/`, `app/api/` or `supabase/`.
-- Required unit coverage: `lib/cart/calculations.ts`, `lib/cart/store.ts`, `lib/validations/*`, `lib/mailgun/templates/*`, `lib/utils/*`.
+- Required unit coverage: `lib/cart/calculations.ts`, `lib/validations/*`, `lib/mailgun/templates/*`, `lib/utils/*`.
 - Route handler tests mock the Supabase client and assert: 401 without session, 400 on invalid body, RPC called with server-derived values only, email failure still returns 201.
 - RLS is verified by `scripts/verify-rls.ts` (requires two test users) and documented manually in `README.md`.
 - Never claim an integration works without running it. Record what was actually tested in `CONTEXT.md`.
@@ -250,7 +250,7 @@ Rules:
 | Postgres function for order creation instead of multiple JS inserts | Atomicity, server-side pricing, and RLS-safe without the service role. |
 | Snapshot `product_name`, `unit_price`, `product_image_url` in `order_items` | Historical accuracy after product edits. |
 | Daily sequence for order numbers (`PC-20261002-0001`) | Human-readable and unique; implemented with an `order_number_counters(day date, last int)` table and `insert … on conflict do update returning`. |
-| Zustand + localStorage for cart | Cart is not account data; persists across refresh; cleared only after a successful order. |
+| Cart in Supabase (`cart_items`) | User requirement: everything persisted lives in Supabase. Cart follows the account across devices. Adding requires sign-in. `create_order()` empties the cart in the same transaction, so it clears if and only if the order commits. `POST /api/orders` reads items from the DB cart, never the request body. |
 | `fetch` instead of Mailgun SDK | Fewer dependencies, edge-compatible, trivial to test. |
 | Delivery fee mirrored in SQL and TS | SQL is truth for stored totals; TS gives instant estimates in the cart. |
 | Profile trigger on `auth.users` | Guarantees a profile row without client involvement. |
@@ -269,7 +269,8 @@ Rules:
 7. Changing the order-number format (customers may have it in emails).
 8. Changing the delivery-fee rule in only one of the two places.
 9. Downgrading auth to anything other than Supabase Auth + Google OAuth.
-10. Clearing the cart before the server confirms the order.
+10. Clearing the cart outside `create_order()` (it must stay in the same transaction as the order).
+11. Storing anything in localStorage, sessionStorage or IndexedDB. All persistence goes to Supabase.
 
 ---
 

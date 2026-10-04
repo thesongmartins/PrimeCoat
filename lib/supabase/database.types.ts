@@ -5,7 +5,26 @@ export type Database = {
   
   "public": {
           Tables: {
-            "order_items": {
+            "cart_items": {
+                  Row: {
+                    "created_at": string,"id": string,"product_id": string,"quantity": number,"updated_at": string,"user_id": string
+                  }
+                  Insert: {
+                    "created_at"?: string,"id"?: string,"product_id": string,"quantity": number,"updated_at"?: string,"user_id"?: string
+                  }
+                  Update: {
+                    "created_at"?: string,"id"?: string,"product_id"?: string,"quantity"?: number,"updated_at"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "cart_items_product_id_fkey"
+      columns: ["product_id"]
+isOneToOne: false
+      referencedRelation: "products"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"order_items": {
                   Row: {
                     "created_at": string,"id": string,"order_id": string,"product_id": string | null,"product_image_url": string | null,"product_name": string,"quantity": number,"subtotal": number,"unit_price": number
                   }
@@ -84,13 +103,13 @@ isOneToOne: false
                   ]
                 },"profiles": {
                   Row: {
-                    "avatar_url": string | null,"created_at": string,"email": string | null,"full_name": string | null,"id": string,"phone": string | null,"updated_at": string
+                    "avatar_url": string | null,"created_at": string,"delivery_state": string,"email": string | null,"full_name": string | null,"id": string,"phone": string | null,"updated_at": string
                   }
                   Insert: {
-                    "avatar_url"?: string | null,"created_at"?: string,"email"?: string | null,"full_name"?: string | null,"id": string,"phone"?: string | null,"updated_at"?: string
+                    "avatar_url"?: string | null,"created_at"?: string,"delivery_state"?: string,"email"?: string | null,"full_name"?: string | null,"id": string,"phone"?: string | null,"updated_at"?: string
                   }
                   Update: {
-                    "avatar_url"?: string | null,"created_at"?: string,"email"?: string | null,"full_name"?: string | null,"id"?: string,"phone"?: string | null,"updated_at"?: string
+                    "avatar_url"?: string | null,"created_at"?: string,"delivery_state"?: string,"email"?: string | null,"full_name"?: string | null,"id"?: string,"phone"?: string | null,"updated_at"?: string
                   }
                   Relationships: [
                     
@@ -103,6 +122,9 @@ isOneToOne: false
           Functions: {
             "calculate_delivery_fee":
 { Args: { "p_state": string,"p_subtotal": number }; Returns: number
+                           },
+"cart_add_item":
+{ Args: { "p_product_id": string,"p_quantity"?: number }; Returns: number
                            },
 "create_order":
 { Args: { "p_customer": Json,"p_items": Json }; Returns: Json

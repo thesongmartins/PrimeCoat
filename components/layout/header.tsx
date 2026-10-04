@@ -8,9 +8,10 @@ import { MobileNav } from "./mobile-nav";
 import { SearchForm } from "./search-form";
 import { AccountMenu } from "./account-menu";
 import { getCurrentUser } from "@/lib/auth/session";
+import { getCartCount } from "@/lib/cart/queries";
 
 export async function Header() {
-  const user = await getCurrentUser();
+  const [user, cartCount] = await Promise.all([getCurrentUser(), getCartCount()]);
   const navUser = user ? { name: user.fullName, email: user.email, avatarUrl: user.avatarUrl } : null;
   return (
     <header className="sticky top-0 z-40 border-b border-stone bg-warm-white/95 backdrop-blur supports-[backdrop-filter]:bg-warm-white/85">
@@ -41,7 +42,7 @@ export async function Header() {
             </Suspense>
           </div>
           <AccountMenu />
-          <CartBadge />
+          <CartBadge count={cartCount} />
         </div>
       </Container>
     </header>

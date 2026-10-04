@@ -41,3 +41,10 @@ export const createOrderSchema = z.object({
 });
 
 export type CreateOrderInput = z.infer<typeof createOrderSchema>;
+
+/** Body of POST /api/orders. Items are read from the user's Supabase cart, never from the request. */
+export const placeOrderRequestSchema = z.object({
+  customer: checkoutSchema,
+});
+
+export type PlaceOrderRequest = z.infer<typeof placeOrderRequestSchema>;

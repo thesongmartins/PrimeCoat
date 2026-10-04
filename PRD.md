@@ -119,7 +119,9 @@ Header, hero, categories, featured products, "Why PrimeCoat", services teaser, p
 
 ### FR-4 Cart
 - Route `/cart`.
-- Zustand store persisted to `localStorage`.
+- Stored in Supabase (`cart_items`, one row per user and product, RLS owner-only). Nothing is kept in browser storage.
+- Adding to cart requires sign-in; signed-out visitors are sent to Google sign-in and returned to the product.
+- The cart follows the account across devices and browsers.
 - Line-item quantity controls with min 1 and a max bounded by stock.
 - Remove item, clear cart.
 - Subtotal, estimated delivery fee, total.
@@ -368,7 +370,7 @@ Breakpoints: 320, 375, 414, 768, 1024, 1280, 1536 px.
 | 2 UI | Next.js scaffold, design system, all pages with seed data | `pnpm build` clean, responsive review |
 | 3 Authentication | Supabase SSR client, Google OAuth, middleware, login/callback/sign-out | Real Google sign-in works locally |
 | 4 Database | Migrations, enums, RLS, functions, seed | Migrations apply; RLS verified |
-| 5 Cart & Checkout | Zustand cart, checkout form, `POST /api/orders`, `create_order` | Real order rows created |
+| 5 Cart & Checkout | Supabase cart, checkout form, `POST /api/orders`, `create_order` | Real order rows created |
 | 6 Orders | `/orders`, `/orders/[id]`, `/account` wired to Supabase | Ownership verified with two accounts |
 | 7 Mailgun | Email template, sender, status tracking | Real email received |
 | 8 Testing | Vitest suite, manual E2E | Tests green; checklist complete |

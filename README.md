@@ -73,7 +73,7 @@ Built as an HNG individual task. Nothing is mocked.
 | Database & Auth | Supabase (Postgres, Auth, RLS) with `@supabase/ssr` |
 | OAuth provider | Google (Google Cloud Console) |
 | Validation | Zod, react-hook-form |
-| Client state | Zustand (cart) |
+| Cart | Supabase `cart_items` table via server actions (no browser storage) |
 | Email | Mailgun HTTP API |
 | Tests | Vitest, Testing Library |
 | Hosting | Vercel |
@@ -84,7 +84,7 @@ Built as an HNG individual task. Nothing is mocked.
 ## Architecture
 
 ```
-Cart (localStorage) ─► Checkout form ─► POST /api/orders
+Cart (Supabase) ──► Checkout form ─► POST /api/orders (reads cart from DB)
                                             │  1. verify session (cookie)
                                             │  2. validate body (Zod)
                                             │  3. rpc create_order()  ── Postgres: price lookup,

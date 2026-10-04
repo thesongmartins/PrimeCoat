@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { createOrderSchema } from "@/lib/validations/checkout";
+import { placeOrderRequestSchema } from "@/lib/validations/checkout";
+import { getCartForCurrentUser } from "@/lib/cart/queries";
 import { getCurrentUser } from "@/lib/auth/session";
 import { createOrderForCurrentUser, CreateOrderError } from "@/lib/orders/create-order";
 import { sendOrderConfirmationEmail } from "@/lib/mailgun/send-order-confirmation";
@@ -13,7 +14,8 @@ export const dynamic = "force-dynamic";
  * POST /api/orders
  * 1. Require a session.           → 401
  * 2. Validate the body with Zod.  → 400
- * 3. create_order() RPC (atomic, server-priced, RLS context = user).
+ * 3. Load the cart from Supabase   → 400 if empty
+ * 4. create_order() RPC (atomic, server-priced, empties the cart in the same transaction).
  * 4. Send the Mailgun confirmation AFTER commit; record its status; never roll back.
  * 5. Respond { orderId, orderNumber, emailStatus }.
  */
@@ -30,7 +32,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid request body." }, { status: 400 });
   }
 
-  const parsed = createOrderSchema.safeParse(json);
+  const parsed = placeOrderRequestSchema.safeParse(json);
   if (!parsed.success) {
     const first = parsed.error.issues[0];
     return NextResponse.json(
@@ -39,8 +41,16 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  const cart = await getCartForCurrentUser();
+  if (cart.items.length === 0) {
+    return NextResponse.json({ error: "Your cart is empty.", code: "CART_EMPTY" }, { status: 400 });
+  }
+
   // The confirmation always goes to the verified account email, whatever the form said.
-  const input = { ...parsed.data, customer: { ...parsed.data.customer, email: user.email || parsed.data.customer.email } };
+  const input = {
+    customer: { ...parsed.data.customer, email: user.email || parsed.data.customer.email },
+    items: cart.items.map((i) => ({ productId: i.productId, quantity: i.quantity })),
+  };
 
   let order;
   try {

@@ -48,6 +48,20 @@ async function main() {
     const productId = (products as { id: string }[])[0]?.id;
     check("anon can read an active product", Boolean(productId));
 
+    // ---- cart_items isolation
+    const addA = await api("/rest/v1/rpc/cart_add_item", ANON, { method: "POST", body: JSON.stringify({ p_product_id: productId, p_quantity: 2 }) }, a.token);
+    check("A can add to her cart via cart_add_item()", addA.status === 200 && addA.json === 2, `status=${addA.status} qty=${addA.text}`);
+    const cartA = await api(`/rest/v1/cart_items?select=product_id,quantity`, ANON, {}, a.token);
+    check("A sees her cart line", Array.isArray(cartA.json) && (cartA.json as unknown[]).length === 1);
+    const cartB = await api(`/rest/v1/cart_items?select=id`, ANON, {}, b.token);
+    check("B sees zero cart lines", Array.isArray(cartB.json) && (cartB.json as unknown[]).length === 0);
+    const updB = await api(`/rest/v1/cart_items?product_id=eq.${productId}`, ANON, { method: "PATCH", body: JSON.stringify({ quantity: 99 }), headers: { Prefer: "return=representation" } }, b.token);
+    check("B cannot change A's cart", Array.isArray(updB.json) && (updB.json as unknown[]).length === 0, `status=${updB.status}`);
+    const insB = await api(`/rest/v1/cart_items`, ANON, { method: "POST", body: JSON.stringify({ user_id: a.id, product_id: productId, quantity: 1 }) }, b.token);
+    check("B cannot insert into A's cart", insB.status >= 400, `status=${insB.status}`);
+    const anonCart = await api(`/rest/v1/cart_items?select=id`, ANON);
+    check("anon sees zero cart lines", Array.isArray(anonCart.json) && (anonCart.json as unknown[]).length === 0);
+
     const created = await api("/rest/v1/rpc/create_order", ANON, {
       method: "POST",
       body: JSON.stringify({
@@ -59,6 +73,8 @@ async function main() {
     check("A can create an order via create_order()", created.status === 200 && Boolean(order?.id), `status=${created.status}`);
     check("order is owned by A", order?.user_id === a.id);
 
+    const cartAfter = await api(`/rest/v1/cart_items?select=id`, ANON, {}, a.token);
+    check("create_order emptied A's cart in the same transaction", Array.isArray(cartAfter.json) && (cartAfter.json as unknown[]).length === 0);
     const asA = await api(`/rest/v1/orders?select=id,order_items(id)`, ANON, {}, a.token);
     check("A sees exactly her order", Array.isArray(asA.json) && (asA.json as unknown[]).length === 1);
 

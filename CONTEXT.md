@@ -22,6 +22,28 @@ This file is the hand-off between development sessions. Update it at the end of 
 
 ---
 
+## Session 7 — 4 October 2026 — Cart moved to Supabase (no browser storage)
+
+### Why
+User requirement: everything that persists must live in Supabase. An audit of production found exactly one browser-stored item, the Zustand cart under localStorage key `primecoat.cart.v1`.
+
+### Changes
+- Migration `20261004120000_server_cart.sql`: `cart_items` (user, product, quantity; unique per user+product; owner-only RLS for select/insert/update/delete), `profiles.delivery_state`, `cart_add_item()` (atomic increment clamped to stock, security invoker), and `create_order()` now deletes the buyer's cart rows and saves their delivery state **inside the order transaction**.
+- `lib/cart/queries.ts` (request-cached server read, priced from current products), `app/cart/actions.ts` (add, set quantity, remove, set delivery state; each revalidates the layout).
+- `POST /api/orders` takes only `{ customer }` and reads items from the Supabase cart; empty cart → 400 `CART_EMPTY`.
+- Header badge count comes from the database. Cart, checkout and order summary are server-rendered from Supabase. Add to Cart while signed out → `/login?next=<product>`.
+- Removed `lib/cart/store.ts`, `CartHydration` and the `zustand` dependency.
+
+### Verified
+- `pnpm verify:rls`: 20/20, including cart isolation (B cannot read, change or insert into A's cart; anon sees nothing) and the cart emptying inside `create_order()`.
+- Browser E2E (local): signed-out add → login with return path; rows land in Supabase; badge counts from DB; a second browser sees the same cart; quantity, remove and delivery state persist; checkout prices from the DB cart (2 × ₦18,500 + Kano ₦7,500 = ₦44,500); cart empty after order. **localStorage and sessionStorage empty at every step.**
+- 106 Vitest tests, typecheck, lint, build all pass.
+
+### Remaining browser-side state
+Only the Supabase auth cookie `sb-<ref>-auth-token`, required for the session.
+
+---
+
 ## Session 6 — 2 October 2026 — Phase 9 deployment verified
 
 ### Verified on https://primecoatt.vercel.app

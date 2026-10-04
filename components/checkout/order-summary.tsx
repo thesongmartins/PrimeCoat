@@ -1,19 +1,13 @@
-"use client";
-
 import Image from "next/image";
 import Link from "next/link";
-import { useCartStore } from "@/lib/cart/store";
+import type { CartItem } from "@/types/cart";
 import { CartSummary } from "@/components/cart/cart-summary";
 import { Price } from "@/components/ui/price";
 import { lineSubtotal } from "@/lib/cart/calculations";
-import { Skeleton } from "@/components/ui/skeleton";
 import { ButtonLink } from "@/components/ui/button";
 
-export function OrderSummary() {
-  const { items, deliveryState, hasHydrated } = useCartStore();
-
-  if (!hasHydrated) return <Skeleton className="h-80" />;
-
+/** Presentational: items come from the server cart in Supabase. */
+export function OrderSummary({ items, deliveryState }: { items: CartItem[]; deliveryState: string }) {
   if (items.length === 0) {
     return (
       <div className="rounded-lg border border-stone bg-white p-6 text-center">

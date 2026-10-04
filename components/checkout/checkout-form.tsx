@@ -7,12 +7,14 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Banknote, ShieldCheck } from "lucide-react";
 import { checkoutSchema, type CheckoutInput } from "@/lib/validations/checkout";
 import { NIGERIA_STATES } from "@/lib/utils/nigeria-states";
-import { useCartStore } from "@/lib/cart/store";
 import { Input, Label, Select, Textarea, FieldError, FieldHint } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
 interface Props {
   defaults: Partial<Pick<CheckoutInput, "fullName" | "email" | "phone">>;
+  deliveryState: string;
+  onDeliveryStateChange: (state: string) => void;
+  cartIsEmpty: boolean;
   /** Email is locked to the signed-in account so the confirmation goes to a verified inbox. */
   lockEmail?: boolean;
 }
@@ -23,11 +25,10 @@ interface CreateOrderResponse {
   emailStatus: "sent" | "failed";
 }
 
-export function CheckoutForm({ defaults, lockEmail = false }: Props) {
+export function CheckoutForm({ defaults, deliveryState, onDeliveryStateChange, cartIsEmpty, lockEmail = false }: Props) {
   const id = useId();
   const f = (n: string) => `${id}-${n}`;
   const router = useRouter();
-  const { items, deliveryState, clear, setDeliveryState } = useCartStore();
   const [serverError, setServerError] = useState<string | null>(null);
 
   const {
@@ -49,7 +50,7 @@ export function CheckoutForm({ defaults, lockEmail = false }: Props) {
 
   async function onSubmit(customer: CheckoutInput) {
     setServerError(null);
-    if (items.length === 0) {
+    if (cartIsEmpty) {
       setServerError("Your cart is empty.");
       return;
     }
@@ -57,10 +58,8 @@ export function CheckoutForm({ defaults, lockEmail = false }: Props) {
       const res = await fetch("/api/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          customer,
-          items: items.map((i) => ({ productId: i.productId, quantity: i.quantity })),
-        }),
+        // The server reads the cart from Supabase; only delivery details are sent.
+        body: JSON.stringify({ customer }),
       });
       if (res.status === 401) {
         router.push(`/login?next=${encodeURIComponent("/checkout")}`);
@@ -70,8 +69,7 @@ export function CheckoutForm({ defaults, lockEmail = false }: Props) {
       if (!res.ok || !body?.orderNumber) {
         throw new Error(body?.error ?? "We couldn't place your order. Please try again.");
       }
-      // Only clear the cart once the server has confirmed the order exists.
-      clear();
+      // The cart was emptied inside the same database transaction that created the order.
       router.push(`/checkout/confirmation/${encodeURIComponent(body.orderNumber)}${body.emailStatus === "failed" ? "?email=failed" : ""}`);
     } catch (err) {
       setServerError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
@@ -116,7 +114,7 @@ export function CheckoutForm({ defaults, lockEmail = false }: Props) {
           </div>
           <div>
             <Label htmlFor={f("state")}>State</Label>
-            <Select id={f("state")} autoComplete="address-level1" aria-invalid={!!errors.state} aria-describedby={errors.state ? f("state-err") : undefined} {...register("state", { onChange: (e) => setDeliveryState(e.target.value) })}>
+            <Select id={f("state")} autoComplete="address-level1" aria-invalid={!!errors.state} aria-describedby={errors.state ? f("state-err") : undefined} {...register("state", { onChange: (e) => onDeliveryStateChange(e.target.value) })}>
               {NIGERIA_STATES.map((s) => (
                 <option key={s} value={s}>{s}</option>
               ))}

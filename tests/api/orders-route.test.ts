@@ -6,7 +6,10 @@ const mocks = vi.hoisted(() => ({
   createOrderForCurrentUser: vi.fn(),
   sendOrderConfirmationEmail: vi.fn(),
   markOrderEmailStatus: vi.fn(),
+  getCartForCurrentUser: vi.fn(),
 }));
+
+vi.mock("@/lib/cart/queries", () => ({ getCartForCurrentUser: mocks.getCartForCurrentUser }));
 
 vi.mock("@/lib/auth/session", () => ({ getCurrentUser: mocks.getCurrentUser }));
 vi.mock("@/lib/orders/create-order", async (importOriginal) => {
@@ -23,7 +26,12 @@ import { NextRequest } from "next/server";
 const user = { id: "u1", email: "ada@example.com", fullName: "Ada", avatarUrl: null, createdAt: "2026-01-01" };
 const body = {
   customer: { fullName: "Ada Okonkwo", email: "spoof@example.com", phone: "08031234567", deliveryAddress: "14 Bourdillon Road", city: "Lagos", state: "Lagos", deliveryInstructions: "" },
-  items: [{ productId: "a1000000-0000-4000-8000-000000000001", quantity: 2 }],
+  // Ignored by the server: items come from the Supabase cart.
+  items: [{ productId: "a1000000-0000-4000-8000-000000000099", quantity: 500, price: 1 }],
+};
+const serverCart = {
+  deliveryState: "Lagos",
+  items: [{ productId: "a1000000-0000-4000-8000-000000000001", slug: "s", name: "Velvet", price: 18500, imageUrl: "/i.svg", size: "4 L", colourName: null, colourHex: null, stockQuantity: 10, quantity: 2 }],
 };
 const order: Order = {
   id: "o1", userId: "u1", orderNumber: "PC-20261002-0001", customerName: "Ada Okonkwo", email: "ada@example.com", phone: "08031234567",
@@ -36,6 +44,7 @@ const req = (json: unknown, raw = false) =>
 
 beforeEach(() => {
   vi.clearAllMocks();
+  mocks.getCartForCurrentUser.mockResolvedValue(serverCart);
   vi.spyOn(console, "error").mockImplementation(() => {});
   vi.spyOn(console, "info").mockImplementation(() => {});
 });
@@ -72,7 +81,7 @@ describe("POST /api/orders", () => {
     expect(await res.json()).toEqual({ orderId: "o1", orderNumber: "PC-20261002-0001", emailStatus: "sent" });
     const input = mocks.createOrderForCurrentUser.mock.calls[0][0];
     expect(input.customer.email).toBe("ada@example.com");
-    expect(input.items).toEqual(body.items);
+    expect(input.items).toEqual([{ productId: "a1000000-0000-4000-8000-000000000001", quantity: 2 }]);
     expect(mocks.markOrderEmailStatus).toHaveBeenCalledWith("o1", "sent");
   });
 
@@ -94,6 +103,15 @@ describe("POST /api/orders", () => {
     expect(res.status).toBe(409);
     expect((await res.json()).code).toBe("INSUFFICIENT_STOCK");
     expect(mocks.sendOrderConfirmationEmail).not.toHaveBeenCalled();
+  });
+
+  it("returns 400 when the Supabase cart is empty, without creating an order", async () => {
+    mocks.getCurrentUser.mockResolvedValue(user);
+    mocks.getCartForCurrentUser.mockResolvedValue({ items: [], deliveryState: "Lagos" });
+    const res = await POST(req(body));
+    expect(res.status).toBe(400);
+    expect((await res.json()).code).toBe("CART_EMPTY");
+    expect(mocks.createOrderForCurrentUser).not.toHaveBeenCalled();
   });
 
   it("returns 500 for unexpected failures", async () => {

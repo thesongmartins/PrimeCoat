@@ -1,15 +1,9 @@
-"use client";
-
 import Link from "next/link";
 import { ShoppingBag } from "lucide-react";
-import { useCartStore } from "@/lib/cart/store";
-import { cartItemCount } from "@/lib/cart/calculations";
 import { cn } from "@/lib/utils/cn";
 
-export function CartBadge({ className }: { className?: string }) {
-  const items = useCartStore((s) => s.items);
-  const hydrated = useCartStore((s) => s.hasHydrated);
-  const count = hydrated ? cartItemCount(items) : 0;
+/** Count is read from Supabase by the (server) header. */
+export function CartBadge({ count, className }: { count: number; className?: string }) {
   return (
     <Link
       href="/cart"

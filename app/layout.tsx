@@ -3,7 +3,6 @@ import { Fraunces, Inter } from "next/font/google";
 import "./globals.css";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
-import { CartHydration } from "@/components/cart/cart-hydration";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -41,7 +40,6 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en-NG" className={`${inter.variable} ${fraunces.variable} h-full`}>
       <body className="flex min-h-full flex-col">
-        <CartHydration />
         <Header />
         <main id="main" className="flex-1">
           {children}
