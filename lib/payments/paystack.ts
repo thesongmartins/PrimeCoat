@@ -1,6 +1,8 @@
 import "server-only";
 import { randomBytes } from "node:crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { createClient } from "@/lib/supabase/server";
+import { isPaystackConfigured } from "@/lib/env";
 import { initializeTransaction, toKobo, verifyTransaction, PaystackError } from "@/lib/paystack/client";
 import { getOrderById } from "@/lib/orders/queries";
 import { mapOrder, ORDER_COLUMNS, ORDER_ITEM_COLUMNS } from "@/lib/orders/mappers";
@@ -15,6 +17,9 @@ import { logger } from "@/lib/utils/logger";
  *            finalize_paystack_payment() marks the order paid exactly once → send confirmation email.
  * Payment rows are written with the service role; clients can only read their own.
  */
+
+/** Where Paystack sends the customer back. Must match app/payments/paystack/callback/route.ts (see tests). */
+export const PAYSTACK_CALLBACK_PATH = "/payments/paystack/callback";
 
 export class PaymentError extends Error {
   constructor(message: string, public readonly status: number, public readonly code: string) {
@@ -54,7 +59,7 @@ export async function startPaystackPayment(orderId: string, origin: string): Pro
       email: order.email,
       amountKobo,
       reference,
-      callbackUrl: `${origin}/checkout/paystack/callback`,
+      callbackUrl: `${origin}${PAYSTACK_CALLBACK_PATH}`,
       metadata: {
         order_id: order.id,
         order_number: order.orderNumber,
@@ -145,4 +150,44 @@ export async function finalizePaystackPayment(reference: string): Promise<Finali
     }
   }
   return { state: "paid", orderNumber: order.orderNumber, newlyPaid: result.newly_paid };
+}
+
+/**
+ * For an unpaid card order the caller already owns: ask Paystack about recent attempts that
+ * never came back (closed tab, wrong return URL, no webhook locally) and finalize any that
+ * succeeded. Prevents a paid order from showing "Pay now" and being charged twice.
+ * Returns true if the order is now paid.
+ */
+export async function reconcilePendingPayments(orderId: string): Promise<boolean> {
+  const admin = createAdminClient();
+  const { data: attempts } = await admin
+    .from("payments")
+    .select("reference")
+    .eq("order_id", orderId)
+    // Paystack reports "abandoned" while the customer is still on its page, and such an
+    // attempt can still complete later, so both are rechecked.
+    .in("status", ["initialized", "abandoned"])
+    .order("created_at", { ascending: false })
+    .limit(3);
+  for (const a of attempts ?? []) {
+    const outcome = await finalizePaystackPayment(a.reference);
+    if (outcome.state === "paid") return true;
+  }
+  return false;
+}
+
+/**
+ * Call BEFORE loading the full order on a page. Uses a narrow status query (RLS: caller must own
+ * the order) and reconciles unpaid card orders with Paystack. Loading the order afterwards matters:
+ * Next memoizes identical GET fetches within a render, so re-reading the same query after
+ * reconciling would return the stale, pre-payment result.
+ */
+export async function reconcileOrderPaymentIfNeeded(key: { id: string } | { orderNumber: string }): Promise<void> {
+  if (!isPaystackConfigured()) return;
+  if ("id" in key && !/^[0-9a-f-]{36}$/i.test(key.id)) return;
+  const supabase = await createClient();
+  const q = supabase.from("orders").select("id, payment_method, payment_status, status");
+  const { data } = await ("id" in key ? q.eq("id", key.id) : q.eq("order_number", key.orderNumber)).maybeSingle();
+  if (!data || data.payment_method !== "card" || data.payment_status !== "unpaid" || data.status === "cancelled") return;
+  await reconcilePendingPayments(data.id);
 }

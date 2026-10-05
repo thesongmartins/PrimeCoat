@@ -9,6 +9,7 @@ import { getOrderByNumber } from "@/lib/orders/queries";
 import { formatNaira } from "@/lib/utils/format-currency";
 import { formatDateTime } from "@/lib/utils/dates";
 import { getSuccessfulPayment } from "@/lib/payments/queries";
+import { reconcileOrderPaymentIfNeeded } from "@/lib/payments/paystack";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Order confirmation", robots: { index: false } };
@@ -17,7 +18,9 @@ export const metadata: Metadata = { title: "Order confirmation", robots: { index
 export default async function ConfirmationPage(props: PageProps<"/checkout/confirmation/[orderNumber]">) {
   const { orderNumber } = await props.params;
   const sp = await props.searchParams;
-  const order = await getOrderByNumber(decodeURIComponent(orderNumber));
+  const number = decodeURIComponent(orderNumber);
+  await reconcileOrderPaymentIfNeeded({ orderNumber: number });
+  const order = await getOrderByNumber(number);
   if (!order) notFound();
 
   const firstName = order.customerName.split(" ")[0];

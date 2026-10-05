@@ -211,6 +211,8 @@ Rules:
 - Webhooks must pass `isValidWebhookSignature` (HMAC-SHA512 of the raw body) before anything else.
 - Card orders send the confirmation email only after payment is verified; pay-on-delivery orders send it at creation.
 - `payments` rows are written by the server only; customers can read their own.
+- The return URL is `PAYSTACK_CALLBACK_PATH` (`/payments/paystack/callback`), outside the login-protected `/checkout` prefix. `tests/paystack/callback-path.test.ts` fails if it doesn't match a real route. `/checkout/paystack/callback` is kept only as a forwarder for old in-flight payments.
+- Pages that show **Pay now** call `reconcileOrderPaymentIfNeeded()` **before** loading the order, so a paid order never shows Pay now (double charge risk). Next memoizes identical GET fetches within a render: never "re-read" the same query after a mutation in the same render.
 
 ## 9. Security rules
 

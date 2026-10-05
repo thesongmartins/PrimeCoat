@@ -22,6 +22,25 @@ This file is the hand-off between development sessions. Update it at the end of 
 
 ---
 
+## Session 10 — 6 October 2026 — Paystack return-URL bug fixed
+
+### Bug (reported from production)
+After a successful Paystack payment the customer landed on a 404: the URL sent to Paystack was `/checkout/paystack/callback`, but the route is `/payments/paystack/callback`. My session-9 test opened the route directly instead of following the URL given to Paystack, so it missed this. The payment itself was fine: the production webhook marked order PC-20261006-0005 paid and sent its email.
+
+### Fix
+- `PAYSTACK_CALLBACK_PATH` constant used for the URL; regression test asserts it maps to an existing route file and isn't under `/checkout`.
+- `/checkout/paystack/callback` now forwards (query intact) to the real callback for payments started before the fix.
+- `reconcileOrderPaymentIfNeeded()` on the order and confirmation pages: checks unpaid card orders with Paystack (initialized and abandoned attempts) before rendering, so a payment that never returned shows Paid, not Pay now. Found and fixed a Next request-memoization pitfall along the way (re-reading the same query after reconciling returned the stale row).
+- Confirmation page after verified payment: "Payment successful" heading and a green receipt panel (amount, channel, date, Paystack reference); email failure demoted to a quiet note; long emails wrap on mobile.
+
+### Verified (local, live Supabase, Paystack test key, real test charges)
+New return URL → Payment successful; old URL → forwards → Payment successful; order page reconciles a never-returned payment (no Pay now); genuinely unpaid order still offers Pay now. Two consecutive clean runs. 133 tests.
+
+### Testing note
+Paystack's hosted checkout is behind a Cloudflare human check, so automated tests complete charges via Paystack's test Charge API on a fresh reference and then follow our return URL. A reference already initialized for hosted checkout can't be charged via the API.
+
+---
+
 ## Session 9 — 5 October 2026 — Paystack card payments (test mode)
 
 ### Added

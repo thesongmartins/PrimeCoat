@@ -83,7 +83,7 @@ export function CheckoutForm({ defaults, deliveryState, onDeliveryStateChange, c
       // The cart was emptied inside the same database transaction that created the order.
       if (body.paymentUrl) {
         setRedirecting(true);
-        // Paystack's hosted checkout; it returns to /payments/paystack/callback.
+        // Paystack hosted checkout; it returns to PAYSTACK_CALLBACK_PATH (/payments/paystack/callback).
         window.location.assign(body.paymentUrl);
         return;
       }
