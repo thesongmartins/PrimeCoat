@@ -1,12 +1,14 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { CheckCircle2, Mail, AlertTriangle, Clock } from "lucide-react";
+import { CheckCircle2, Mail, AlertTriangle, Clock, ShieldCheck } from "lucide-react";
 import { Container } from "@/components/ui/container";
 import { ButtonLink } from "@/components/ui/button";
 import { OrderDetail } from "@/components/orders/order-detail";
 import { PayNowButton } from "@/components/orders/pay-now-button";
 import { getOrderByNumber } from "@/lib/orders/queries";
 import { formatNaira } from "@/lib/utils/format-currency";
+import { formatDateTime } from "@/lib/utils/dates";
+import { getSuccessfulPayment } from "@/lib/payments/queries";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Order confirmation", robots: { index: false } };
@@ -24,15 +26,17 @@ export default async function ConfirmationPage(props: PageProps<"/checkout/confi
   const awaitingCard = isCard && !paid && order.status !== "cancelled";
   const paymentParam = typeof sp.payment === "string" ? sp.payment : undefined;
   const emailFailed = order.confirmationEmailStatus === "failed";
+  const receipt = isCard && paid ? await getSuccessfulPayment(order.id) : null;
+  const justPaid = paid && paymentParam === "success";
 
-  const heading = awaitingCard ? "Your order is waiting for payment" : `Thank you, ${firstName}`;
+  const heading = awaitingCard ? "Your order is waiting for payment" : justPaid ? "Payment successful" : `Thank you, ${firstName}`;
   const Icon = awaitingCard ? (paymentParam === "pending" ? Clock : AlertTriangle) : CheckCircle2;
   const iconClass = awaitingCard ? "text-[#8a6418]" : "text-success";
 
   let emailNote: string | null = null;
   if (!awaitingCard) {
     emailNote = emailFailed
-      ? `Your order is saved, but we could not send the confirmation email to ${order.email} just now. This page and your order history are your receipt.`
+      ? `We couldn't email your receipt to ${order.email} just now. This page and your order history are your receipt.`
       : order.confirmationEmailStatus === "sent"
         ? `A confirmation email with this receipt has been sent to ${order.email}.`
         : `A confirmation email is on its way to ${order.email}.`;
@@ -49,7 +53,7 @@ export default async function ConfirmationPage(props: PageProps<"/checkout/confi
     <Container className="py-12 sm:py-16">
       <div className="mx-auto max-w-2xl text-center">
         <Icon className={`mx-auto size-12 ${iconClass}`} aria-hidden="true" />
-        <p className="eyebrow mt-6">{awaitingCard ? "Payment needed" : paid ? "Payment received" : "Order confirmed"}</p>
+        <p className="eyebrow mt-6">{awaitingCard ? "Payment needed" : paid ? (justPaid ? `Thank you, ${firstName}` : "Payment received") : "Order confirmed"}</p>
         <h1 className="mt-3 font-display text-4xl font-medium">{heading}</h1>
         <p className="mt-3 text-mute">
           Order <strong className="font-mono font-semibold text-charcoal">{order.orderNumber}</strong>
@@ -67,12 +71,44 @@ export default async function ConfirmationPage(props: PageProps<"/checkout/confi
           <PayNowButton orderId={order.id} className="mt-4" />
         </div>
       ) : (
-        emailNote && (
-          <div className={`mx-auto mt-10 flex max-w-2xl gap-4 rounded-lg border p-5 ${emailFailed ? "border-ochre/50 bg-ochre-100" : "border-stone bg-white"}`}>
-            {emailFailed ? <AlertTriangle className="mt-0.5 size-5 shrink-0 text-[#8a6418]" aria-hidden="true" /> : <Mail className="mt-0.5 size-5 shrink-0 text-terracotta" aria-hidden="true" />}
-            <p className="text-sm leading-relaxed text-charcoal-600">{emailNote}</p>
-          </div>
-        )
+        <div className="mx-auto mt-10 max-w-2xl space-y-4">
+          {paid && isCard && (
+            <section aria-labelledby="payment-receipt" className="rounded-lg border border-success/30 bg-success-100 p-5 sm:p-6">
+              <div className="flex items-start gap-3">
+                <ShieldCheck className="mt-0.5 size-5 shrink-0 text-success" aria-hidden="true" />
+                <div className="min-w-0 flex-1">
+                  <h2 id="payment-receipt" className="font-medium text-success">
+                    {formatNaira(receipt?.amount ?? order.total)} paid securely with Paystack
+                  </h2>
+                  <dl className="mt-3 grid gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
+                    <div className="min-w-0">
+                      <dt className="text-charcoal-600">Paid with</dt>
+                      <dd className="font-medium capitalize">{receipt?.channel ? receipt.channel.replace(/_/g, " ") : "Card"}</dd>
+                    </div>
+                    {(receipt?.paidAt ?? null) && (
+                      <div className="min-w-0">
+                        <dt className="text-charcoal-600">Paid on</dt>
+                        <dd className="font-medium">{formatDateTime(receipt!.paidAt!)}</dd>
+                      </div>
+                    )}
+                    {receipt && (
+                      <div className="min-w-0 sm:col-span-2">
+                        <dt className="text-charcoal-600">Payment reference</dt>
+                        <dd className="break-all font-mono text-[0.8125rem] font-medium">{receipt.reference}</dd>
+                      </div>
+                    )}
+                  </dl>
+                </div>
+              </div>
+            </section>
+          )}
+          {emailNote && (
+            <p className="flex items-start gap-2.5 px-1 text-sm leading-relaxed text-mute">
+              {emailFailed ? <AlertTriangle className="mt-0.5 size-4 shrink-0" aria-hidden="true" /> : <Mail className="mt-0.5 size-4 shrink-0" aria-hidden="true" />}
+              <span className="min-w-0 break-words">{emailNote}</span>
+            </p>
+          )}
+        </div>
       )}
 
       <div className="mt-12">
