@@ -40,6 +40,9 @@ export function renderOrderConfirmation(order: Order, siteUrl: string): Rendered
   const placed = formatDateTime(order.createdAt);
   const status = ORDER_STATUS_LABELS[order.status];
   const payment = PAYMENT_METHOD_LABELS[order.paymentMethod];
+  const paid = order.paymentStatus === "paid";
+  const paymentLine = paid ? `${payment} · Paid` : payment;
+  const paymentSentence = paid ? `Your payment of ${formatNaira(order.total)} has been received.` : "Payment is made on delivery.";
 
   const itemRows = order.items
     .map(
@@ -62,7 +65,7 @@ export function renderOrderConfirmation(order: Order, siteUrl: string): Rendered
 <title>Your PrimeCoat order ${e(order.orderNumber)}</title>
 </head>
 <body style="margin:0;padding:0;background:${C.cream};font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:${C.charcoal};">
-  <div style="display:none;max-height:0;overflow:hidden;opacity:0;">Order ${e(order.orderNumber)} confirmed — ${formatNaira(order.total)}, pay on delivery.</div>
+  <div style="display:none;max-height:0;overflow:hidden;opacity:0;">Order ${e(order.orderNumber)} confirmed — ${formatNaira(order.total)}, ${paid ? "paid" : "pay on delivery"}.</div>
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${C.cream};padding:32px 16px;">
     <tr><td align="center">
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background:${C.warmWhite};border:1px solid ${C.stone};border-radius:8px;overflow:hidden;">
@@ -82,7 +85,7 @@ export function renderOrderConfirmation(order: Order, siteUrl: string): Rendered
           <h1 style="margin:10px 0 0;font:500 28px Georgia,'Times New Roman',serif;color:${C.charcoal};">Thank you, ${e(firstName)}.</h1>
           <p style="margin:12px 0 0;font-size:15px;line-height:1.6;color:${C.mute};">
             We've received your order and will call <strong style="color:${C.charcoal};">${e(order.phone)}</strong> to arrange delivery.
-            Payment is made on delivery.
+            ${paymentSentence}
           </p>
         </td></tr>
 
@@ -103,7 +106,7 @@ export function renderOrderConfirmation(order: Order, siteUrl: string): Rendered
             <tr><td style="padding:14px 0 4px;font-size:14px;color:${C.mute};">Subtotal</td><td align="right" style="padding:14px 0 4px;font-size:14px;">${formatNaira(order.subtotal)}</td></tr>
             <tr><td style="padding:4px 0;font-size:14px;color:${C.mute};">Delivery · ${e(order.state)}</td><td align="right" style="padding:4px 0;font-size:14px;color:${order.deliveryFee === 0 ? C.success : C.charcoal};">${order.deliveryFee === 0 ? "Free" : formatNaira(order.deliveryFee)}</td></tr>
             <tr><td style="padding:12px 0 0;border-top:1px solid ${C.charcoal};font-size:16px;font-weight:600;">Total</td><td align="right" style="padding:12px 0 0;border-top:1px solid ${C.charcoal};font:600 20px Georgia,serif;">${formatNaira(order.total)}</td></tr>
-            <tr><td colspan="2" style="padding:6px 0 0;font-size:12px;color:${C.mute};">Payment method: ${e(payment)}</td></tr>
+            <tr><td colspan="2" style="padding:6px 0 0;font-size:12px;color:${C.mute};">Payment: ${e(paymentLine)}</td></tr>
           </table>
         </td></tr>
 
@@ -158,7 +161,7 @@ export function renderOrderConfirmation(order: Order, siteUrl: string): Rendered
     `Order number: ${order.orderNumber}`,
     `Placed:       ${placed}`,
     `Status:       ${status}`,
-    `Payment:      ${payment}`,
+    `Payment:      ${paymentLine}`,
     "",
     "Items:",
     ...lines,
@@ -176,7 +179,7 @@ export function renderOrderConfirmation(order: Order, siteUrl: string): Rendered
     "",
     `View your order: ${orderUrl}`,
     "",
-    "We will call to arrange delivery. Payment is made on delivery.",
+    `We will call to arrange delivery. ${paymentSentence}`,
     "PrimeCoat Paints Ltd · 12 Adeola Odeku Street, Victoria Island, Lagos",
   ].join("\n");
 

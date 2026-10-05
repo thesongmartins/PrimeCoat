@@ -6,7 +6,7 @@ vi.mock("@/lib/supabase/server", () => ({ createClient: async () => ({ rpc }) })
 import { createOrderForCurrentUser, CreateOrderError } from "@/lib/orders/create-order";
 
 const input = {
-  customer: { fullName: "Ada", email: "a@b.co", phone: "08031234567", deliveryAddress: "x street", city: "Lagos", state: "Lagos" as const, deliveryInstructions: "" },
+  customer: { fullName: "Ada", email: "a@b.co", phone: "08031234567", deliveryAddress: "x street", city: "Lagos", state: "Lagos" as const, deliveryInstructions: "", paymentMethod: "pay_on_delivery" as const },
   items: [{ productId: "a1000000-0000-4000-8000-000000000001", quantity: 1 }],
 };
 

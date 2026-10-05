@@ -17,7 +17,7 @@ export function OrderList({ orders }: { orders: OrderSummary[] }) {
                 <p className="font-mono text-sm font-semibold tracking-tight">{o.orderNumber}</p>
                 <p className="mt-0.5 text-xs text-mute">{formatDate(o.createdAt)} · {o.itemCount} {o.itemCount === 1 ? "item" : "items"}</p>
               </div>
-              <OrderStatusBadge status={o.status} />
+              <OrderStatusBadge status={o.status} awaitingPayment={o.paymentMethod === "card" && o.paymentStatus === "unpaid"} />
             </div>
             <div className="mt-4 flex items-center justify-between">
               <Price amount={o.total} className="text-base font-semibold" />
@@ -47,7 +47,7 @@ export function OrderList({ orders }: { orders: OrderSummary[] }) {
                 <td className="px-5 py-4 text-mute">{formatDate(o.createdAt)}</td>
                 <td className="px-5 py-4 text-mute">{o.itemCount}</td>
                 <td className="px-5 py-4"><Price amount={o.total} className="font-medium" /></td>
-                <td className="px-5 py-4"><OrderStatusBadge status={o.status} /></td>
+                <td className="px-5 py-4"><OrderStatusBadge status={o.status} awaitingPayment={o.paymentMethod === "card" && o.paymentStatus === "unpaid"} /></td>
                 <td className="px-5 py-4 text-right">
                   <Link href={`/orders/${o.id}`} className={buttonVariants({ variant: "outline", size: "sm" })}>View Order</Link>
                 </td>

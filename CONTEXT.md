@@ -22,6 +22,25 @@ This file is the hand-off between development sessions. Update it at the end of 
 
 ---
 
+## Session 9 — 5 October 2026 — Paystack card payments (test mode)
+
+### Added
+- Migration `20261005120000_paystack_payments.sql`: `payments` table (one row per attempt, owner read-only RLS), `orders.paid_at`, `finalize_paystack_payment()` (service role only; locks the attempt, checks amount and currency, marks order paid + confirmed once), `create_order()` now takes `paymentMethod` (`pay_on_delivery` | `card`).
+- `lib/paystack/client.ts` (initialize, verify, webhook signature, `toKobo`), `lib/payments/paystack.ts` (start + finalize, email after verified payment).
+- Routes: `POST /api/orders` (card → returns Paystack `paymentUrl`; email deferred), `POST /api/orders/[id]/pay` (retry), `GET /payments/paystack/callback`, `POST /api/paystack/webhook`.
+- UI: payment choice at checkout (card shown only when configured), Pay now on unpaid card orders, payment-aware confirmation page, Awaiting payment badge in order history, email says "payment received" for paid orders.
+- Also restored `supabase/migrations/20261004130000_cart_realtime.sql` locally from the live database (user's mobile work; it was applied remotely but missing from the repo, which blocked `db:push`). Left uncommitted with the user's other mobile changes.
+
+### Verified
+- 130 unit tests (signature, kobo maths, webhook route, card-order route paths, paid email wording).
+- Live database: card order created unpaid; invalid method rejected; customers can't write payments or call finalize; owner-only payment reads; underpaid charge rejected; concurrent finalize marks paid exactly once; repeat is a no-op.
+- UI at 375 px: payment options, button text switches, unpaid confirmation with Pay now, list badge.
+
+### Not yet verified (needs the user's key)
+- A real Paystack test charge end to end (initialize → hosted checkout → callback verify → paid → email), and the webhook on production.
+
+---
+
 ## Session 8 — 4 October 2026 — Email and password accounts
 
 ### Added

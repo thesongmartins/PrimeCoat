@@ -97,6 +97,8 @@ const summaryRowSchema = z.object({
   order_number: z.string(),
   total: z.coerce.number(),
   status: z.enum(ORDER_STATUSES),
+  payment_method: z.enum(["pay_on_delivery", "card", "bank_transfer"]).default("pay_on_delivery"),
+  payment_status: z.enum(["unpaid", "paid", "refunded"]).default("unpaid"),
   created_at: z.string(),
   order_items: z.array(z.object({ quantity: z.number().int() })).default([]),
 });
@@ -108,6 +110,8 @@ export function mapOrderSummary(row: unknown): OrderSummary {
     orderNumber: r.order_number,
     total: r.total,
     status: r.status,
+    paymentMethod: r.payment_method,
+    paymentStatus: r.payment_status,
     createdAt: r.created_at,
     itemCount: r.order_items.reduce((n, i) => n + i.quantity, 0),
   };

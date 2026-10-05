@@ -2,19 +2,22 @@
 
 import { useId, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Banknote, ShieldCheck } from "lucide-react";
-import { checkoutSchema, type CheckoutInput } from "@/lib/validations/checkout";
+import { Banknote, CreditCard, ShieldCheck } from "lucide-react";
+import { checkoutSchema, type CheckoutFormValues, type CheckoutInput } from "@/lib/validations/checkout";
+import { cn } from "@/lib/utils/cn";
 import { NIGERIA_STATES } from "@/lib/utils/nigeria-states";
 import { Input, Label, Select, Textarea, FieldError, FieldHint } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
 interface Props {
-  defaults: Partial<Pick<CheckoutInput, "fullName" | "email" | "phone">>;
+  defaults: Partial<Pick<CheckoutFormValues, "fullName" | "email" | "phone">>;
   deliveryState: string;
   onDeliveryStateChange: (state: string) => void;
   cartIsEmpty: boolean;
+  /** Card payment is offered only when Paystack is configured on the server. */
+  cardAvailable: boolean;
   /** Email is locked to the signed-in account so the confirmation goes to a verified inbox. */
   lockEmail?: boolean;
 }
@@ -22,10 +25,14 @@ interface Props {
 interface CreateOrderResponse {
   orderId: string;
   orderNumber: string;
-  emailStatus: "sent" | "failed";
+  emailStatus?: "sent" | "failed";
+  /** Card orders: Paystack hosted checkout to send the customer to. */
+  paymentUrl?: string;
+  /** Card orders: the order exists but Paystack couldn't be reached; retry from the order page. */
+  paymentError?: string;
 }
 
-export function CheckoutForm({ defaults, deliveryState, onDeliveryStateChange, cartIsEmpty, lockEmail = false }: Props) {
+export function CheckoutForm({ defaults, deliveryState, onDeliveryStateChange, cartIsEmpty, cardAvailable, lockEmail = false }: Props) {
   const id = useId();
   const f = (n: string) => `${id}-${n}`;
   const router = useRouter();
@@ -34,8 +41,9 @@ export function CheckoutForm({ defaults, deliveryState, onDeliveryStateChange, c
   const {
     register,
     handleSubmit,
+    control,
     formState: { errors, isSubmitting },
-  } = useForm<CheckoutInput>({
+  } = useForm<CheckoutFormValues, unknown, CheckoutInput>({
     resolver: zodResolver(checkoutSchema),
     defaultValues: {
       fullName: defaults.fullName ?? "",
@@ -45,8 +53,11 @@ export function CheckoutForm({ defaults, deliveryState, onDeliveryStateChange, c
       city: "",
       state: (NIGERIA_STATES as readonly string[]).includes(deliveryState) ? (deliveryState as CheckoutInput["state"]) : "Lagos",
       deliveryInstructions: "",
+      paymentMethod: cardAvailable ? "card" : "pay_on_delivery",
     },
   });
+  const paymentMethod = useWatch({ control, name: "paymentMethod" });
+  const [redirecting, setRedirecting] = useState(false);
 
   async function onSubmit(customer: CheckoutInput) {
     setServerError(null);
@@ -70,7 +81,14 @@ export function CheckoutForm({ defaults, deliveryState, onDeliveryStateChange, c
         throw new Error(body?.error ?? "We couldn't place your order. Please try again.");
       }
       // The cart was emptied inside the same database transaction that created the order.
-      router.push(`/checkout/confirmation/${encodeURIComponent(body.orderNumber)}${body.emailStatus === "failed" ? "?email=failed" : ""}`);
+      if (body.paymentUrl) {
+        setRedirecting(true);
+        // Paystack's hosted checkout; it returns to /payments/paystack/callback.
+        window.location.assign(body.paymentUrl);
+        return;
+      }
+      const confirmation = `/checkout/confirmation/${encodeURIComponent(body.orderNumber)}`;
+      router.push(body.paymentError ? `${confirmation}?payment=failed` : `${confirmation}${body.emailStatus === "failed" ? "?email=failed" : ""}`);
     } catch (err) {
       setServerError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
     }
@@ -131,14 +149,25 @@ export function CheckoutForm({ defaults, deliveryState, onDeliveryStateChange, c
 
       <fieldset>
         <legend className="font-display text-xl font-medium">Payment</legend>
-        <div className="mt-5 flex items-start gap-4 rounded-lg border border-charcoal bg-white p-4">
-          <span className="grid size-10 shrink-0 place-items-center rounded-md bg-cream text-terracotta">
-            <Banknote className="size-5" aria-hidden="true" />
-          </span>
-          <div>
-            <p className="font-medium">Pay on Delivery</p>
-            <p className="mt-1 text-sm leading-relaxed text-mute">Pay the driver in cash or by bank transfer when your order arrives. Online card payment is coming soon.</p>
-          </div>
+        <div className="mt-5 grid gap-3" role="radiogroup" aria-label="Payment method">
+          {cardAvailable && (
+            <PaymentOption
+              id={f("pay-card")}
+              checked={paymentMethod === "card"}
+              icon={<CreditCard className="size-5" aria-hidden="true" />}
+              title="Pay now with card"
+              body="Secure payment by card, bank transfer or USSD through Paystack. You'll return here once it's done."
+              input={<input id={f("pay-card")} type="radio" value="card" className="sr-only" {...register("paymentMethod")} />}
+            />
+          )}
+          <PaymentOption
+            id={f("pay-pod")}
+            checked={paymentMethod === "pay_on_delivery"}
+            icon={<Banknote className="size-5" aria-hidden="true" />}
+            title="Pay on Delivery"
+            body="Pay the driver in cash or by bank transfer when your order arrives."
+            input={<input id={f("pay-pod")} type="radio" value="pay_on_delivery" className="sr-only" {...register("paymentMethod")} />}
+          />
         </div>
       </fieldset>
 
@@ -149,13 +178,38 @@ export function CheckoutForm({ defaults, deliveryState, onDeliveryStateChange, c
       )}
 
       <div className="space-y-3">
-        <Button type="submit" size="lg" loading={isSubmitting} className="w-full">
-          Place Order
+        <Button type="submit" size="lg" loading={isSubmitting || redirecting} className="w-full">
+          {paymentMethod === "card" ? (redirecting ? "Opening secure payment…" : "Continue to payment") : "Place Order"}
         </Button>
         <p className="flex items-center justify-center gap-1.5 text-xs text-mute">
-          <ShieldCheck className="size-3.5" aria-hidden="true" /> Your order is saved to your account and confirmed by email.
+          <ShieldCheck className="size-3.5" aria-hidden="true" />
+          {paymentMethod === "card"
+            ? "Card details are entered on Paystack, never on this site."
+            : "Your order is saved to your account and confirmed by email."}
         </p>
       </div>
     </form>
+  );
+}
+
+function PaymentOption({ id, checked, icon, title, body, input }: { id: string; checked: boolean; icon: React.ReactNode; title: string; body: string; input: React.ReactNode }) {
+  return (
+    <label
+      htmlFor={id}
+      className={cn(
+        "flex cursor-pointer items-start gap-4 rounded-lg border bg-white p-4 transition-colors has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-terracotta",
+        checked ? "border-charcoal ring-1 ring-charcoal" : "border-stone hover:border-charcoal-600",
+      )}
+    >
+      {input}
+      <span className="grid size-10 shrink-0 place-items-center rounded-md bg-cream text-terracotta">{icon}</span>
+      <span className="flex-1">
+        <span className="block font-medium">{title}</span>
+        <span className="mt-1 block text-sm leading-relaxed text-mute">{body}</span>
+      </span>
+      <span aria-hidden="true" className={cn("mt-1 grid size-5 shrink-0 place-items-center rounded-full border", checked ? "border-charcoal" : "border-stone-400")}>
+        {checked && <span className="size-2.5 rounded-full bg-charcoal" />}
+      </span>
+    </label>
   );
 }

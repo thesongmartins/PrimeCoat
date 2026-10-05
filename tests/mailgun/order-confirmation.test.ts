@@ -70,4 +70,12 @@ describe("renderOrderConfirmation", () => {
     expect(free.html).toContain(">Free<");
     expect(free.text).toContain("Delivery:     Free");
   });
+
+  it("says the payment was received for paid card orders", () => {
+    const paid = renderOrderConfirmation({ ...order, paymentMethod: "card", paymentStatus: "paid" }, "https://x.test");
+    expect(paid.html).toContain("Your payment of ₦45,100 has been received.");
+    expect(paid.html).toContain("Card (Paystack) · Paid");
+    expect(paid.html).not.toContain("Payment is made on delivery");
+    expect(paid.text).toContain("Card (Paystack) · Paid");
+  });
 });

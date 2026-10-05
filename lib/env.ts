@@ -16,7 +16,7 @@ export function isSupabaseConfigured(): boolean {
 }
 
 /** Throws a readable error naming the missing server variable. Server code only. */
-export function requireServerEnv(name: "SUPABASE_SERVICE_ROLE_KEY" | "MAILGUN_API_KEY" | "MAILGUN_DOMAIN" | "MAILGUN_FROM_EMAIL"): string {
+export function requireServerEnv(name: "SUPABASE_SERVICE_ROLE_KEY" | "MAILGUN_API_KEY" | "MAILGUN_DOMAIN" | "MAILGUN_FROM_EMAIL" | "PAYSTACK_SECRET_KEY"): string {
   const value = process.env[name];
   if (!value) throw new Error(`Missing required environment variable ${name}. See .env.example.`);
   return value;
@@ -24,4 +24,9 @@ export function requireServerEnv(name: "SUPABASE_SERVICE_ROLE_KEY" | "MAILGUN_AP
 
 export function optionalServerEnv(name: "MAILGUN_API_BASE_URL" | "MAILGUN_REPLY_TO"): string | undefined {
   return process.env[name] || undefined;
+}
+
+/** True when card payments can be offered (a Paystack secret key is configured). Server only. */
+export function isPaystackConfigured(): boolean {
+  return Boolean(process.env.PAYSTACK_SECRET_KEY);
 }

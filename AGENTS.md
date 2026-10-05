@@ -59,7 +59,7 @@ Key principles:
 | `client.ts` | Client components | anon |
 | `server.ts` | Server components, route handlers, server actions | anon + cookies |
 | `proxy.ts` | `proxy.ts` only | anon + cookies |
-| `admin.ts` | Scripts and `lib/orders/mark-email-status.ts` only | service role — **never import in anything that can be bundled for the browser** |
+| `admin.ts` | Scripts, `lib/orders/mark-email-status.ts` and `lib/payments/paystack.ts` only | service role — **never import in anything that can be bundled for the browser** |
 
 ### Authentication flow
 
@@ -203,6 +203,15 @@ Rules:
 
 ---
 
+## 8b. Paystack rules
+
+- Only `lib/paystack/client.ts` talks to Paystack (`fetch`, secret key, server only). Payment lifecycle lives in `lib/payments/paystack.ts`.
+- Never mark an order paid from the redirect query or the webhook body alone. Always `verifyTransaction(reference)` first, then call `finalize_paystack_payment()` (service role only), which checks amount and currency and is idempotent under concurrency.
+- The amount sent to Paystack is computed from the stored order total (`toKobo`), never from the client.
+- Webhooks must pass `isValidWebhookSignature` (HMAC-SHA512 of the raw body) before anything else.
+- Card orders send the confirmation email only after payment is verified; pay-on-delivery orders send it at creation.
+- `payments` rows are written by the server only; customers can read their own.
+
 ## 9. Security rules
 
 - Validate every request body with Zod before touching the database.
@@ -224,6 +233,7 @@ Rules:
 | `NEXT_PUBLIC_SITE_URL` | public | Canonical origin, used for OAuth `redirectTo` and email links |
 | `SUPABASE_SERVICE_ROLE_KEY` | server only | Seeding + email-status update |
 | `SUPABASE_DB_URL` | scripts only | Postgres URI for `pnpm db:push` / `pnpm db:types`. Never read by the app. |
+| `PAYSTACK_SECRET_KEY` | server only | Paystack secret key (test `sk_test_` or live). Card option hidden when unset. |
 | `MAILGUN_API_KEY` | server only | Mailgun private API key |
 | `MAILGUN_DOMAIN` | server only | Sending domain (sandbox or verified) |
 | `MAILGUN_FROM_EMAIL` | server only | e.g. `PrimeCoat <orders@mg.primecoat.ng>` |

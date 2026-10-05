@@ -64,13 +64,13 @@ isOneToOne: false
                   ]
                 },"orders": {
                   Row: {
-                    "city": string,"confirmation_email_error": string | null,"confirmation_email_sent_at": string | null,"confirmation_email_status": Database["public"]['Enums']["email_status"],"created_at": string,"customer_name": string,"delivery_address": string,"delivery_fee": number,"delivery_instructions": string | null,"email": string,"id": string,"order_number": string,"payment_method": Database["public"]['Enums']["payment_method"],"payment_status": Database["public"]['Enums']["payment_status"],"phone": string,"state": string,"status": Database["public"]['Enums']["order_status"],"subtotal": number,"total": number,"updated_at": string,"user_id": string
+                    "city": string,"confirmation_email_error": string | null,"confirmation_email_sent_at": string | null,"confirmation_email_status": Database["public"]['Enums']["email_status"],"created_at": string,"customer_name": string,"delivery_address": string,"delivery_fee": number,"delivery_instructions": string | null,"email": string,"id": string,"order_number": string,"paid_at": string | null,"payment_method": Database["public"]['Enums']["payment_method"],"payment_status": Database["public"]['Enums']["payment_status"],"phone": string,"state": string,"status": Database["public"]['Enums']["order_status"],"subtotal": number,"total": number,"updated_at": string,"user_id": string
                   }
                   Insert: {
-                    "city": string,"confirmation_email_error"?: string | null,"confirmation_email_sent_at"?: string | null,"confirmation_email_status"?: Database["public"]['Enums']["email_status"],"created_at"?: string,"customer_name": string,"delivery_address": string,"delivery_fee": number,"delivery_instructions"?: string | null,"email": string,"id"?: string,"order_number": string,"payment_method"?: Database["public"]['Enums']["payment_method"],"payment_status"?: Database["public"]['Enums']["payment_status"],"phone": string,"state": string,"status"?: Database["public"]['Enums']["order_status"],"subtotal": number,"total": number,"updated_at"?: string,"user_id": string
+                    "city": string,"confirmation_email_error"?: string | null,"confirmation_email_sent_at"?: string | null,"confirmation_email_status"?: Database["public"]['Enums']["email_status"],"created_at"?: string,"customer_name": string,"delivery_address": string,"delivery_fee": number,"delivery_instructions"?: string | null,"email": string,"id"?: string,"order_number": string,"paid_at"?: string | null,"payment_method"?: Database["public"]['Enums']["payment_method"],"payment_status"?: Database["public"]['Enums']["payment_status"],"phone": string,"state": string,"status"?: Database["public"]['Enums']["order_status"],"subtotal": number,"total": number,"updated_at"?: string,"user_id": string
                   }
                   Update: {
-                    "city"?: string,"confirmation_email_error"?: string | null,"confirmation_email_sent_at"?: string | null,"confirmation_email_status"?: Database["public"]['Enums']["email_status"],"created_at"?: string,"customer_name"?: string,"delivery_address"?: string,"delivery_fee"?: number,"delivery_instructions"?: string | null,"email"?: string,"id"?: string,"order_number"?: string,"payment_method"?: Database["public"]['Enums']["payment_method"],"payment_status"?: Database["public"]['Enums']["payment_status"],"phone"?: string,"state"?: string,"status"?: Database["public"]['Enums']["order_status"],"subtotal"?: number,"total"?: number,"updated_at"?: string,"user_id"?: string
+                    "city"?: string,"confirmation_email_error"?: string | null,"confirmation_email_sent_at"?: string | null,"confirmation_email_status"?: Database["public"]['Enums']["email_status"],"created_at"?: string,"customer_name"?: string,"delivery_address"?: string,"delivery_fee"?: number,"delivery_instructions"?: string | null,"email"?: string,"id"?: string,"order_number"?: string,"paid_at"?: string | null,"payment_method"?: Database["public"]['Enums']["payment_method"],"payment_status"?: Database["public"]['Enums']["payment_status"],"phone"?: string,"state"?: string,"status"?: Database["public"]['Enums']["order_status"],"subtotal"?: number,"total"?: number,"updated_at"?: string,"user_id"?: string
                   }
                   Relationships: [
                     
@@ -87,6 +87,25 @@ isOneToOne: false
                   }
                   Relationships: [
                     
+                  ]
+                },"payments": {
+                  Row: {
+                    "amount_kobo": number,"channel": string | null,"created_at": string,"currency": string,"gateway_response": string | null,"id": string,"order_id": string,"paid_at": string | null,"provider": string,"provider_transaction_id": string | null,"reference": string,"status": Database["public"]['Enums']["payment_attempt_status"],"updated_at": string,"user_id": string
+                  }
+                  Insert: {
+                    "amount_kobo": number,"channel"?: string | null,"created_at"?: string,"currency"?: string,"gateway_response"?: string | null,"id"?: string,"order_id": string,"paid_at"?: string | null,"provider"?: string,"provider_transaction_id"?: string | null,"reference": string,"status"?: Database["public"]['Enums']["payment_attempt_status"],"updated_at"?: string,"user_id": string
+                  }
+                  Update: {
+                    "amount_kobo"?: number,"channel"?: string | null,"created_at"?: string,"currency"?: string,"gateway_response"?: string | null,"id"?: string,"order_id"?: string,"paid_at"?: string | null,"provider"?: string,"provider_transaction_id"?: string | null,"reference"?: string,"status"?: Database["public"]['Enums']["payment_attempt_status"],"updated_at"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "payments_order_id_fkey"
+      columns: ["order_id"]
+isOneToOne: false
+      referencedRelation: "orders"
+      referencedColumns: ["id"]
+    }
                   ]
                 },"products": {
                   Row: {
@@ -129,12 +148,15 @@ isOneToOne: false
 "create_order":
 { Args: { "p_customer": Json,"p_items": Json }; Returns: Json
                            },
+"finalize_paystack_payment":
+{ Args: { "p_amount_kobo": number,"p_channel": string,"p_currency": string,"p_gateway_response": string,"p_paid_at": string,"p_reference": string,"p_transaction_id": string }; Returns: Json
+                           },
 "generate_order_number":
 { Args: Record<PropertyKey, never>; Returns: string
                            }
           }
           Enums: {
-            "email_status": "pending"|"sent"|"failed","order_status": "pending"|"confirmed"|"processing"|"out_for_delivery"|"delivered"|"cancelled","payment_method": "pay_on_delivery"|"card"|"bank_transfer","payment_status": "unpaid"|"paid"|"refunded","product_category": "interior"|"exterior"|"ceiling"|"primer"|"gloss"|"textured"|"wood_finish"|"metal_finish"|"accessories"|"tools","property_type": "flat"|"detached_house"|"duplex"|"office"|"shop"|"warehouse"|"other","service_request_status": "new"|"contacted"|"scheduled"|"completed"|"closed","service_type": "residential"|"commercial"|"interior"|"exterior"|"colour_consultation"|"surface_preparation"|"repainting"
+            "email_status": "pending"|"sent"|"failed","order_status": "pending"|"confirmed"|"processing"|"out_for_delivery"|"delivered"|"cancelled","payment_attempt_status": "initialized"|"success"|"failed"|"abandoned","payment_method": "pay_on_delivery"|"card"|"bank_transfer","payment_status": "unpaid"|"paid"|"refunded","product_category": "interior"|"exterior"|"ceiling"|"primer"|"gloss"|"textured"|"wood_finish"|"metal_finish"|"accessories"|"tools","property_type": "flat"|"detached_house"|"duplex"|"office"|"shop"|"warehouse"|"other","service_request_status": "new"|"contacted"|"scheduled"|"completed"|"closed","service_type": "residential"|"commercial"|"interior"|"exterior"|"colour_consultation"|"surface_preparation"|"repainting"
           }
           CompositeTypes: {
             [_ in never]: never
@@ -250,7 +272,7 @@ export type CompositeTypes<
 export const Constants = {
   "public": {
           Enums: {
-            "email_status": ["pending", "sent", "failed"],"order_status": ["pending", "confirmed", "processing", "out_for_delivery", "delivered", "cancelled"],"payment_method": ["pay_on_delivery", "card", "bank_transfer"],"payment_status": ["unpaid", "paid", "refunded"],"product_category": ["interior", "exterior", "ceiling", "primer", "gloss", "textured", "wood_finish", "metal_finish", "accessories", "tools"],"property_type": ["flat", "detached_house", "duplex", "office", "shop", "warehouse", "other"],"service_request_status": ["new", "contacted", "scheduled", "completed", "closed"],"service_type": ["residential", "commercial", "interior", "exterior", "colour_consultation", "surface_preparation", "repainting"]
+            "email_status": ["pending", "sent", "failed"],"order_status": ["pending", "confirmed", "processing", "out_for_delivery", "delivered", "cancelled"],"payment_attempt_status": ["initialized", "success", "failed", "abandoned"],"payment_method": ["pay_on_delivery", "card", "bank_transfer"],"payment_status": ["unpaid", "paid", "refunded"],"product_category": ["interior", "exterior", "ceiling", "primer", "gloss", "textured", "wood_finish", "metal_finish", "accessories", "tools"],"property_type": ["flat", "detached_house", "duplex", "office", "shop", "warehouse", "other"],"service_request_status": ["new", "contacted", "scheduled", "completed", "closed"],"service_type": ["residential", "commercial", "interior", "exterior", "colour_consultation", "surface_preparation", "repainting"]
           }
         }
 } as const

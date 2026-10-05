@@ -1,7 +1,8 @@
 import Image from "next/image";
 import type { Order } from "@/types/order";
 import { PAYMENT_METHOD_LABELS } from "@/types/order";
-import { OrderStatusBadge } from "./status-badge";
+import { OrderStatusBadge, PaymentStatusBadge } from "./status-badge";
+import { PayNowButton } from "./pay-now-button";
 import { Price } from "@/components/ui/price";
 import { formatDateTime } from "@/lib/utils/dates";
 
@@ -12,7 +13,7 @@ export function OrderDetail({ order }: { order: Order }) {
         <div className="rounded-lg border border-stone bg-white">
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-stone px-5 py-4">
             <h2 id="items-heading" className="font-display text-xl font-medium">Items</h2>
-            <OrderStatusBadge status={order.status} />
+            <OrderStatusBadge status={order.status} awaitingPayment={order.paymentMethod === "card" && order.paymentStatus === "unpaid"} />
           </div>
           <ul className="divide-y divide-stone">
             {order.items.map((item) => (
@@ -35,13 +36,20 @@ export function OrderDetail({ order }: { order: Order }) {
       </section>
 
       <aside className="space-y-4 lg:col-span-4">
+        {order.paymentMethod === "card" && order.paymentStatus === "unpaid" && order.status !== "cancelled" && (
+          <section className="rounded-lg border border-ochre/50 bg-ochre-100 p-5" aria-labelledby="pay-heading">
+            <h2 id="pay-heading" className="font-medium">Payment not completed</h2>
+            <p className="mt-1 text-sm leading-relaxed text-charcoal-600">Your order is reserved. Complete the card payment to confirm it.</p>
+            <PayNowButton orderId={order.id} size="md" className="mt-4" />
+          </section>
+        )}
         <section className="rounded-lg border border-stone bg-white p-5" aria-labelledby="order-info">
           <h2 id="order-info" className="text-xs font-semibold uppercase tracking-[0.14em] text-mute">Order information</h2>
           <dl className="mt-3 space-y-2 text-sm">
             <div className="flex justify-between gap-4"><dt className="text-mute">Order number</dt><dd className="font-mono font-semibold">{order.orderNumber}</dd></div>
             <div className="flex justify-between gap-4"><dt className="text-mute">Placed</dt><dd>{formatDateTime(order.createdAt)}</dd></div>
             <div className="flex justify-between gap-4"><dt className="text-mute">Payment</dt><dd>{PAYMENT_METHOD_LABELS[order.paymentMethod]}</dd></div>
-            <div className="flex justify-between gap-4"><dt className="text-mute">Payment status</dt><dd className="capitalize">{order.paymentStatus}</dd></div>
+            <div className="flex items-center justify-between gap-4"><dt className="text-mute">Payment status</dt><dd><PaymentStatusBadge status={order.paymentStatus} /></dd></div>
           </dl>
         </section>
         <section className="rounded-lg border border-stone bg-white p-5" aria-labelledby="delivery-info">

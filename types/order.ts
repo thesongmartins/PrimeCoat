@@ -24,7 +24,7 @@ export type EmailStatus = "pending" | "sent" | "failed";
 
 export const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
   pay_on_delivery: "Pay on Delivery",
-  card: "Card",
+  card: "Card (Paystack)",
   bank_transfer: "Bank transfer",
 };
 
@@ -67,6 +67,8 @@ export interface OrderSummary {
   orderNumber: string;
   total: number;
   status: OrderStatus;
+  paymentMethod: PaymentMethod;
+  paymentStatus: PaymentStatus;
   itemCount: number;
   createdAt: string;
 }

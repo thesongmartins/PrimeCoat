@@ -7,6 +7,12 @@ const mocks = vi.hoisted(() => ({
   sendOrderConfirmationEmail: vi.fn(),
   markOrderEmailStatus: vi.fn(),
   getCartForCurrentUser: vi.fn(),
+  startPaystackPayment: vi.fn(),
+}));
+
+vi.mock("@/lib/payments/paystack", () => ({
+  startPaystackPayment: mocks.startPaystackPayment,
+  PaymentError: class PaymentError extends Error {},
 }));
 
 vi.mock("@/lib/cart/queries", () => ({ getCartForCurrentUser: mocks.getCartForCurrentUser }));
@@ -112,6 +118,39 @@ describe("POST /api/orders", () => {
     expect(res.status).toBe(400);
     expect((await res.json()).code).toBe("CART_EMPTY");
     expect(mocks.createOrderForCurrentUser).not.toHaveBeenCalled();
+  });
+
+  it("card orders: no email at creation, returns the Paystack checkout URL", async () => {
+    process.env.PAYSTACK_SECRET_KEY = "sk_test_x";
+    mocks.getCurrentUser.mockResolvedValue(user);
+    mocks.createOrderForCurrentUser.mockResolvedValue({ ...order, paymentMethod: "card" });
+    mocks.startPaystackPayment.mockResolvedValue({ paymentUrl: "https://checkout.paystack.com/abc", reference: "PC-1-x" });
+    const res = await POST(req({ ...body, customer: { ...body.customer, paymentMethod: "card" } }));
+    expect(res.status).toBe(201);
+    expect((await res.json()).paymentUrl).toBe("https://checkout.paystack.com/abc");
+    expect(mocks.createOrderForCurrentUser.mock.calls[0][0].customer.paymentMethod).toBe("card");
+    expect(mocks.sendOrderConfirmationEmail).not.toHaveBeenCalled();
+  });
+
+  it("card orders: rejected up front when Paystack isn't configured", async () => {
+    delete process.env.PAYSTACK_SECRET_KEY;
+    mocks.getCurrentUser.mockResolvedValue(user);
+    const res = await POST(req({ ...body, customer: { ...body.customer, paymentMethod: "card" } }));
+    expect(res.status).toBe(400);
+    expect((await res.json()).code).toBe("CARD_UNAVAILABLE");
+    expect(mocks.createOrderForCurrentUser).not.toHaveBeenCalled();
+  });
+
+  it("card orders: keeps the order and reports when Paystack can't be reached", async () => {
+    process.env.PAYSTACK_SECRET_KEY = "sk_test_x";
+    mocks.getCurrentUser.mockResolvedValue(user);
+    mocks.createOrderForCurrentUser.mockResolvedValue({ ...order, paymentMethod: "card" });
+    mocks.startPaystackPayment.mockRejectedValue(new Error("down"));
+    const res = await POST(req({ ...body, customer: { ...body.customer, paymentMethod: "card" } }));
+    expect(res.status).toBe(201);
+    const json = await res.json();
+    expect(json.orderNumber).toBe("PC-20261002-0001");
+    expect(json.paymentError).toBeTruthy();
   });
 
   it("returns 500 for unexpected failures", async () => {

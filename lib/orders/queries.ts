@@ -16,7 +16,7 @@ export async function getOrdersForCurrentUser(): Promise<OrderSummary[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("orders")
-    .select("id, order_number, total, status, created_at, order_items(quantity)")
+    .select("id, order_number, total, status, payment_method, payment_status, created_at, order_items(quantity)")
     .order("created_at", { ascending: false });
   if (error) {
     logger.error("orders.list_failed", { message: error.message });

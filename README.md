@@ -129,6 +129,7 @@ Copy `.env.example` to `.env.local`. Never commit `.env.local`.
 | `NEXT_PUBLIC_SITE_URL` | browser + server | yes | `http://localhost:3000` locally; production URL on Vercel |
 | `SUPABASE_SERVICE_ROLE_KEY` | server only | yes | Supabase → Project Settings → API → `service_role` key. Used by seed/verification scripts and to record the email status on an order. **Secret.** |
 | `SUPABASE_DB_URL` | scripts only | for migrations | Supabase → **Connect** → *Session pooler* URI (port 5432) with your database password filled in. Used by `pnpm db:push` and `pnpm db:types`. **Secret.** |
+| `PAYSTACK_SECRET_KEY` | server only | for card payments | Paystack → Settings → API Keys & Webhooks → Test Secret Key. **Secret.** |
 | `MAILGUN_API_KEY` | server only | yes | Mailgun → Account → API Security → Private API key. **Secret.** |
 | `MAILGUN_DOMAIN` | server only | yes | e.g. `sandboxXXXX.mailgun.org` or `mg.yourdomain.com` |
 | `MAILGUN_FROM_EMAIL` | server only | yes | e.g. `PrimeCoat <orders@sandboxXXXX.mailgun.org>` |
@@ -201,6 +202,22 @@ Configure in the Supabase dashboard:
    - *Reset password*: change the link to `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=recovery`
 
 Verify: create an account at `/signup`, click the email link, confirm you land on `/account` showing "Email and password". Sign out, use **Forgot password?**, follow the link, set a new password, sign in with it.
+
+## Paystack payments (test mode)
+
+Checkout offers **Pay now with card** (Paystack) alongside **Pay on Delivery**. The card option only appears when `PAYSTACK_SECRET_KEY` is set.
+
+How it works: placing a card order creates the order (unpaid) and empties the cart, then sends the customer to Paystack's hosted checkout. Paystack returns them to `/payments/paystack/callback`, where the server **re-verifies the transaction with Paystack's API** and marks the order paid through `finalize_paystack_payment()` (amount and currency checked, idempotent). The confirmation email is sent only once payment is verified. A signed webhook at `/api/paystack/webhook` covers customers who close the tab before returning. Unpaid card orders show **Pay now** on the order and confirmation pages.
+
+Setup:
+
+1. **Account:** sign up at [paystack.com](https://paystack.com). Test mode is available immediately, no business verification needed.
+2. **Key:** Paystack dashboard → **Settings → API Keys & Webhooks** → copy the **Test Secret Key** (`sk_test_…`).
+3. **Put it in** `.env.local` and in Vercel → Settings → Environment Variables as `PAYSTACK_SECRET_KEY` (mark it Sensitive). Redeploy.
+4. **Webhook** (production): on the same Paystack page set **Test Webhook URL** to `https://<prod-domain>/api/paystack/webhook`. The callback URL is sent per payment, so the dashboard Callback URL can stay empty.
+5. **Verify:** check out with *Pay now with card* and use Paystack's test card `4084 0840 8408 4081`, any future expiry, CVV `408`, PIN `0000`, OTP `123456`. You return to a "Payment received" page, the order shows **Paid**, Paystack → Transactions lists it, and the confirmation email arrives.
+
+Switching to live payments later only means replacing the key with `sk_live_…` after Paystack activates your business.
 
 ## Mailgun setup
 
