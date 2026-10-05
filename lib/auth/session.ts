@@ -1,7 +1,7 @@
 import "server-only";
 import { cache } from "react";
 import { isSupabaseConfigured } from "@/lib/env";
-import { createClient } from "@/lib/supabase/server";
+import { bearerToken, createClient } from "@/lib/supabase/server";
 
 export interface CurrentUser {
   id: string;
@@ -20,10 +20,12 @@ export interface CurrentUser {
 export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
   if (!isSupabaseConfigured()) return null;
   const supabase = await createClient();
+  // A Bearer client has no stored session, so the token is validated with Supabase Auth directly.
+  const token = await bearerToken();
   const {
     data: { user },
     error,
-  } = await supabase.auth.getUser();
+  } = await supabase.auth.getUser(token ?? undefined);
   if (error || !user) return null;
   const meta = (user.user_metadata ?? {}) as Record<string, unknown>;
   const str = (v: unknown) => (typeof v === "string" && v.length > 0 ? v : null);
