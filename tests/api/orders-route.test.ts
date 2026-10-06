@@ -10,10 +10,14 @@ const mocks = vi.hoisted(() => ({
   startPaystackPayment: vi.fn(),
 }));
 
-vi.mock("@/lib/payments/paystack", () => ({
-  startPaystackPayment: mocks.startPaystackPayment,
-  PaymentError: class PaymentError extends Error {},
-}));
+vi.mock("@/lib/payments/paystack", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/payments/paystack")>();
+  return {
+    startPaystackPayment: mocks.startPaystackPayment,
+    paymentClientFromRequest: actual.paymentClientFromRequest,
+    PaymentError: class PaymentError extends Error {},
+  };
+});
 
 vi.mock("@/lib/cart/queries", () => ({ getCartForCurrentUser: mocks.getCartForCurrentUser }));
 
@@ -130,6 +134,21 @@ describe("POST /api/orders", () => {
     expect((await res.json()).paymentUrl).toBe("https://checkout.paystack.com/abc");
     expect(mocks.createOrderForCurrentUser.mock.calls[0][0].customer.paymentMethod).toBe("card");
     expect(mocks.sendOrderConfirmationEmail).not.toHaveBeenCalled();
+    expect(mocks.startPaystackPayment.mock.calls[0][2]).toBe("web");
+  });
+
+  it("card orders from the mobile app return to the app after paying", async () => {
+    process.env.PAYSTACK_SECRET_KEY = "sk_test_x";
+    mocks.getCurrentUser.mockResolvedValue(user);
+    mocks.createOrderForCurrentUser.mockResolvedValue({ ...order, paymentMethod: "card" });
+    mocks.startPaystackPayment.mockResolvedValue({ paymentUrl: "https://checkout.paystack.com/abc", reference: "PC-1-x" });
+    const appReq = new NextRequest("http://localhost/api/orders", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-PrimeCoat-Client": "app" },
+      body: JSON.stringify({ ...body, customer: { ...body.customer, paymentMethod: "card" } }),
+    });
+    expect((await POST(appReq)).status).toBe(201);
+    expect(mocks.startPaystackPayment.mock.calls[0][2]).toBe("app");
   });
 
   it("card orders: rejected up front when Paystack isn't configured", async () => {

@@ -21,6 +21,20 @@ import { logger } from "@/lib/utils/logger";
 /** Where Paystack sends the customer back. Must match app/payments/paystack/callback/route.ts (see tests). */
 export const PAYSTACK_CALLBACK_PATH = "/payments/paystack/callback";
 
+/** Return address for payments started from the mobile app; it verifies, then opens the app. */
+export const PAYSTACK_APP_CALLBACK_PATH = "/payments/paystack/app-callback";
+
+/** The mobile app's payment-result screen (primecoat://payment-result). */
+export const APP_PAYMENT_RESULT_URL = "primecoat://payment-result";
+
+/** Who started the payment: decides whether Paystack returns to the website or the app. */
+export type PaymentClient = "web" | "app";
+
+/** The mobile app marks its requests with `X-PrimeCoat-Client: app`. */
+export function paymentClientFromRequest(request: Request): PaymentClient {
+  return request.headers.get("x-primecoat-client") === "app" ? "app" : "web";
+}
+
 export class PaymentError extends Error {
   constructor(message: string, public readonly status: number, public readonly code: string) {
     super(message);
@@ -31,13 +45,20 @@ export function newReference(orderNumber: string): string {
   return `${orderNumber}-${randomBytes(4).toString("hex")}`;
 }
 
-export async function startPaystackPayment(orderId: string, origin: string): Promise<{ paymentUrl: string; reference: string }> {
+export async function startPaystackPayment(
+  orderId: string,
+  origin: string,
+  client: PaymentClient = "web",
+): Promise<{ paymentUrl: string; reference: string }> {
   // Loaded through the user's session, so RLS guarantees they own it.
   const order = await getOrderById(orderId);
   if (!order) throw new PaymentError("Order not found.", 404, "NOT_FOUND");
   if (order.paymentMethod !== "card") throw new PaymentError("This order is paid on delivery.", 409, "NOT_CARD");
   if (order.paymentStatus === "paid") throw new PaymentError("This order is already paid.", 409, "ALREADY_PAID");
   if (order.status === "cancelled") throw new PaymentError("This order was cancelled.", 409, "CANCELLED");
+  // An earlier attempt may have succeeded without coming back to us (closed tab, no webhook).
+  // Check before charging again.
+  if (await reconcilePendingPayments(order.id)) throw new PaymentError("This order is already paid.", 409, "ALREADY_PAID");
 
   const reference = newReference(order.orderNumber);
   const amountKobo = toKobo(order.total);
@@ -59,11 +80,14 @@ export async function startPaystackPayment(orderId: string, origin: string): Pro
       email: order.email,
       amountKobo,
       reference,
-      callbackUrl: `${origin}${PAYSTACK_CALLBACK_PATH}`,
+      callbackUrl: client === "app" ? `${origin}${PAYSTACK_APP_CALLBACK_PATH}` : `${origin}${PAYSTACK_CALLBACK_PATH}`,
       metadata: {
         order_id: order.id,
         order_number: order.orderNumber,
-        cancel_action: `${origin}/checkout/confirmation/${encodeURIComponent(order.orderNumber)}?payment=cancelled`,
+        cancel_action:
+          client === "app"
+            ? `${origin}${PAYSTACK_APP_CALLBACK_PATH}?reference=${encodeURIComponent(reference)}&cancelled=1`
+            : `${origin}/checkout/confirmation/${encodeURIComponent(order.orderNumber)}?payment=cancelled`,
       },
     });
     logger.info("payments.initialized", { orderNumber: order.orderNumber, reference });

@@ -7,7 +7,7 @@ import { sendOrderConfirmationEmail } from "@/lib/mailgun/send-order-confirmatio
 import { markOrderEmailStatus } from "@/lib/orders/mark-email-status";
 import { logger } from "@/lib/utils/logger";
 import { isPaystackConfigured } from "@/lib/env";
-import { startPaystackPayment, PaymentError } from "@/lib/payments/paystack";
+import { paymentClientFromRequest, startPaystackPayment, PaymentError } from "@/lib/payments/paystack";
 import { originFromRequest } from "@/lib/utils/origin";
 
 export const runtime = "nodejs";
@@ -78,7 +78,7 @@ export async function POST(request: NextRequest) {
     // is sent only after the payment is verified. If this hand-off fails the customer can retry
     // from the order page.
     try {
-      const { paymentUrl } = await startPaystackPayment(order.id, originFromRequest(request));
+      const { paymentUrl } = await startPaystackPayment(order.id, originFromRequest(request), paymentClientFromRequest(request));
       return NextResponse.json({ orderId: order.id, orderNumber: order.orderNumber, paymentUrl }, { status: 201 });
     } catch (err) {
       const message = err instanceof PaymentError ? err.message : "We couldn't start the payment.";
