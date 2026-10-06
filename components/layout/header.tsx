@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { Container } from "@/components/ui/container";
 import { CartBadge } from "@/components/cart/cart-badge";
+import { CartRealtime } from "@/components/cart/cart-realtime";
 import { Logo } from "./logo";
 import { NAV_LINKS } from "./nav-links";
 import { NavLink } from "./nav-link";
@@ -43,6 +44,7 @@ export async function Header() {
           </div>
           <AccountMenu />
           <CartBadge count={cartCount} />
+          {user && <CartRealtime userId={user.id} />}
         </div>
       </Container>
     </header>
